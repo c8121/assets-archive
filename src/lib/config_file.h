@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "file_util.c"
-#include "char_util.c"
+#include "file_util.h"
+#include "char_util.h"
 
 
 #define MAX_LEN_SECTION_NAME 512

@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "char_buffer_util.c"
+#include "char_buffer_util.h"
 
 char *archive_storage_base_dir = "/tmp";
 char *archive_storage_file_suffix = ".archive";

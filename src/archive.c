@@ -21,11 +21,11 @@
 #include <stdio.h>
 #include <sysexits.h>
 
-#include "lib/cli_args.c"
-#include "lib/config_file.c"
+#include "lib/cli_args.h"
+#include "lib/config_file.h"
 
-#include "lib/archive_hash.c"
-#include "lib/archive_storage.c"
+#include "lib/archive_hash.h"
+#include "lib/archive_storage.h"
 /**
  *
  */

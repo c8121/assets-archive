@@ -20,7 +20,7 @@
 #ifndef ASSETS_ARCHIVE_COMMAND_UTIL
 #define ASSETS_ARCHIVE_COMMAND_UTIL
 
-#include "char_buffer_util.c"
+#include "char_buffer_util.h"
 
 #define COMMAND_READ_BUFFER_LENGTH 512
 
