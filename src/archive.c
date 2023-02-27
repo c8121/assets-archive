@@ -26,6 +26,7 @@
 
 #include "lib/archive_hash.h"
 #include "lib/archive_storage.h"
+
 /**
  *
  */
@@ -64,6 +65,12 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Failed to read from config file: %s\n", argv[i]);
             exit(EX_IOERR);
         }
+    }
+
+    // Check environment
+    if (!archive_storage_validate()) {
+        fprintf(stderr, "Archive storage not valid\n");
+        exit(EX_IOERR);
     }
 
     // Get & check file name

@@ -37,4 +37,19 @@ int file_exists(char *file_name) {
     return 0;
 }
 
+/**
+ * @return 1 if it does exist and is a directory, 0 if not
+ */
+int dir_exists(char *dir_name) {
+    if (dir_name == NULL || *dir_name == 0)
+        return 0;
+
+    struct stat file_stat;
+    if (stat(dir_name, &file_stat) == 0) {
+        if (S_ISDIR(file_stat.st_mode))
+            return 1;
+    }
+    return 0;
+}
+
 #endif //ASSETS_ARCHIVE_FILE_UTIL

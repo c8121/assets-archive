@@ -37,7 +37,7 @@ struct char_buffer {
 /**
  *
  */
-struct char_buffer *char_buffer_create(char *s, size_t len) {
+struct char_buffer *char_buffer_create(const char *s, size_t len) {
 
     struct char_buffer *b = malloc(sizeof(struct char_buffer));
     b->len = len;
@@ -61,7 +61,7 @@ struct char_buffer *char_buffer_create(char *s, size_t len) {
  * @param len Length of s including terminator.
  * @return Pointer to cb (will be created if NULL given)
  */
-struct char_buffer *char_buffer_append(struct char_buffer *cb, char *s, size_t len) {
+struct char_buffer *char_buffer_append(struct char_buffer *cb, const char *s, size_t len) {
 
     if (s == NULL || *s == 0 || len == 0)
         return cb;
