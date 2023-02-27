@@ -25,7 +25,7 @@
 /**
  * @return 1 if it does exist and is a regular file, 0 if not
  */
-int file_exists(char *file_name) {
+int file_exists(const char *file_name) {
     if (file_name == NULL || *file_name == 0)
         return 0;
 
@@ -40,7 +40,7 @@ int file_exists(char *file_name) {
 /**
  * @return 1 if it does exist and is a directory, 0 if not
  */
-int dir_exists(char *dir_name) {
+int dir_exists(const char *dir_name) {
     if (dir_name == NULL || *dir_name == 0)
         return 0;
 
