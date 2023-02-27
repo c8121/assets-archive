@@ -25,7 +25,7 @@
 #include "lib/config_file.c"
 
 #include "lib/archive_hash.c"
-
+#include "lib/archive_storage.c"
 /**
  *
  */
@@ -80,4 +80,7 @@ int main(int argc, char *argv[]) {
 
     char *hash = archive_hash(file_name);
     printf("HASH: %s\n", hash);
+
+    char *path = archive_storage_get_path(hash);
+    printf("ARCHIVE-PATH: %s\n", path);
 }
