@@ -22,7 +22,7 @@
 
 #include "command_util.h"
 
-char *archive_hash_program = "sha256sum -z {{file_name}}";
+char *archive_hash_program = "sha256sum -z \"{{file_name}}\"";
 
 /**
  * Generate hash based on contents of given file.
