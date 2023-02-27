@@ -73,21 +73,26 @@ int main(int argc, char *argv[]) {
         exit(EX_IOERR);
     }
 
-    // Get & check file name
-    char *file_name = cli_get_arg(1, argc, argv);
-    if (file_name == NULL) {
-        fprintf(stderr, "Missing argument: file\n");
-        usage_message(argc, argv);
-        return EX_USAGE;
-    } else if (!file_exists(file_name)) {
-        fprintf(stderr, "File not found: %s\n", file_name);
-        return EX_IOERR;
+    // Add files
+    int f = 1;
+    char *file_name;
+    while ((file_name = cli_get_arg(f++, argc, argv)) != NULL) {
+        if (!file_exists(file_name)) {
+            fprintf(stderr, "File not found: %s\n", file_name);
+            return EX_IOERR;
+        }
+        printf("Source: %s\n", file_name);
+
+        char *hash = archive_hash(file_name);
+        printf("Hash: %s\n", hash);
+
+        char *existing = archive_storage_find_file(hash);
+        if (existing == NULL) {
+            char *path = archive_storage_get_path(hash);
+            archive_storage_add_file(file_name, path);
+            printf("Added file to archive: %s\n", path);
+        } else {
+            printf("File already exists in archive: %s\n", existing);
+        }
     }
-    printf("FILE: %s\n", file_name);
-
-    char *hash = archive_hash(file_name);
-    printf("HASH: %s\n", hash);
-
-    char *path = archive_storage_get_path(hash);
-    printf("ARCHIVE-PATH: %s\n", path);
 }
