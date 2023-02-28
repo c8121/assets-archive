@@ -224,6 +224,11 @@ char *archive_storage_find_file(char *hash) {
 
     __archive_storage_init();
 
+    if (strnlen(hash, 255) <= SPLIT_HASH_AT) {
+        fprintf(stderr, "Invalid hash length\n");
+        return NULL;
+    }
+
     char subdir[SPLIT_HASH_AT + 1];
     strncpy(subdir, hash, SPLIT_HASH_AT);
 

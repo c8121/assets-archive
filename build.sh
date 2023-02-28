@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE=$(realpath $(dirname $0))
+BASE=$(realpath "$(dirname "$0")")
 
 sourceDir=$BASE/src
 binDir=$BASE/bin
@@ -15,5 +15,6 @@ if [[ ! -d "$binDir" ]] ; then
 	mkdir -p "$binDir"
 fi
 
-cd $BASE
+cd "$BASE"
 gcc -Wall -o "$binDir/archive" "$sourceDir/archive.c"
+gcc -Wall -o "$binDir/archive-metadata" "$sourceDir/archive-metadata.c"
