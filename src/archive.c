@@ -93,6 +93,9 @@ int main(int argc, char *argv[]) {
             printf("Added file to archive: %s\n", path);
         } else {
             printf("File already exists in archive: %s\n", existing);
+            free(existing);
         }
+
+        free(hash);
     }
 }
