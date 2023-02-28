@@ -21,8 +21,9 @@
 #define ASSETS_ARCHIVE_HASH
 
 #include "command_util.h"
+#include "char_util.h"
 
-char *archive_hash_program = "sha256sum -z {{file_name}}";
+char *archive_hash_program = "sha256sum -z \"{{file_name}}\"";
 
 /**
  * Generate hash based on contents of given file.
@@ -34,16 +35,20 @@ char *archive_hash(char *file_name) {
     char *command = command_build(archive_hash_program, args);
 
     char *ret = command_read(command);
-    printf("\"%s\"\n", ret);
-
-    //Hash program might send additional output, delimited by space: ignore this
-    char *e = strchr(ret, ' ');
-    if (e != NULL) {
-        e[0] = '\0';
+    if (!is_null_or_empty(ret)) {
+        //Hash program might send additional output, delimited by space: ignore this
+        char *e = strchr(ret, ' ');
+        if (e != NULL) {
+            e[0] = '\0';
+        }
     }
+
 
     free(command);
     command_args_free(args);
+
+    if (is_null_or_empty(ret))
+        fprintf(stderr, "archive_hash() failed for \"%s\"\n", file_name);
 
     return ret;
 }

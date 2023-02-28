@@ -84,18 +84,23 @@ int main(int argc, char *argv[]) {
         printf("Source: %s\n", file_name);
 
         char *hash = archive_hash(file_name);
-        printf("Hash: %s\n", hash);
+        if (!is_null_or_empty(hash)) {
+            printf("Hash: %s\n", hash);
 
-        char *existing = archive_storage_find_file(hash);
-        if (existing == NULL) {
-            char *path = archive_storage_get_path(hash);
-            archive_storage_add_file(file_name, path);
-            printf("Added file to archive: %s\n", path);
+            char *existing = archive_storage_find_file(hash);
+            if (existing == NULL) {
+                char *path = archive_storage_get_path(hash);
+                archive_storage_add_file(file_name, path);
+                printf("Added file to archive: %s\n", path);
+            } else {
+                printf("File already exists in archive: %s\n", existing);
+                free(existing);
+            }
         } else {
-            printf("File already exists in archive: %s\n", existing);
-            free(existing);
+            fprintf(stderr, "Failed to obtain hash for %s\n", file_name);
         }
 
-        free(hash);
+        if (hash != NULL)
+            free(hash);
     }
 }
