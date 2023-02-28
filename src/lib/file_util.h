@@ -22,11 +22,13 @@
 
 #include <sys/stat.h>
 
+#include "char_util.h"
+
 /**
  * @return 1 if it does exist and is a regular file, 0 if not
  */
 int file_exists(const char *file_name) {
-    if (file_name == NULL || *file_name == 0)
+    if (is_null_or_empty(file_name))
         return 0;
 
     struct stat file_stat;
@@ -41,7 +43,7 @@ int file_exists(const char *file_name) {
  * @return 1 if it does exist and is a directory, 0 if not
  */
 int dir_exists(const char *dir_name) {
-    if (dir_name == NULL || *dir_name == 0)
+    if (is_null_or_empty(dir_name))
         return 0;
 
     struct stat file_stat;

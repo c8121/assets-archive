@@ -63,7 +63,7 @@ struct char_buffer *char_buffer_create(const char *s, size_t len) {
  */
 struct char_buffer *char_buffer_append(struct char_buffer *cb, const char *s, size_t len) {
 
-    if (s == NULL || *s == 0 || len == 0)
+    if (is_null_or_empty(s) || len == 0)
         return cb;
 
     struct char_buffer *b;

@@ -38,5 +38,14 @@ int is_whitespace(int c) {
     return 0;
 }
 
+/**
+ * @return 1 if s == NULL or *s == 0
+ */
+int is_null_or_empty(const char *s) {
+    if (s == NULL || *s == 0)
+        return 1;
+    return 0;
+}
+
 
 #endif //ASSETS_ARCHIVE_CHAR_UTIL
