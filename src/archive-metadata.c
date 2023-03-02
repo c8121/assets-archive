@@ -28,6 +28,7 @@
 #include "lib/config_file.h"
 
 #include "lib/archive_storage.h"
+#include "lib/archive_metadata_json.h"
 
 /**
  *
@@ -43,11 +44,14 @@ void apply_config(char *section_name, char *name, char *value) {
  */
 void usage_message(int argc, char *argv[]) {
     printf("USAGE:\n");
-    printf("%s <hash> [options]\n", argv[0]);
+    printf("%s <hash> <command> [options]\n", argv[0]);
+    printf("\n");
+    printf("Available commands:\n");
+    printf("    add-origin <name> [tags,...]\n");
     printf("\n");
     printf("Available options:\n");
-    printf("    -origin <name>    : Set name of file origin (path for example).\n");
-    printf("    -tags <tag[ ...]> : Tags.\n");
+    printf("    -config: File containing application configuration.\n");
+    printf("    -help:   This message.\n");
 }
 
 void fail(int status, char *message) {
@@ -68,57 +72,50 @@ int main(int argc, char *argv[]) {
     // Load & apply configuration
     int i = cli_get_opt_idx("-config", argc, argv);
     if (i > 0) {
-        if (read_config_file(argv[i], &apply_config) == 0) {
-            fprintf(stderr, "Failed to read from config file: %s\n", argv[i]);
-            exit(EX_IOERR);
-        }
+        if (read_config_file(argv[i], &apply_config) == 0)
+            fail(EX_IOERR, "Failed to read from config file\n");
     }
 
     // Check environment
-    if (!archive_storage_validate()) {
-        fprintf(stderr, "Archive storage not valid\n");
-        exit(EX_IOERR);
-    }
+    if (!archive_storage_validate())
+        fail(EX_IOERR, "Archive storage not valid\n");
 
     char *hash = cli_get_arg(1, argc, argv);
-    if (!is_null_or_empty(hash)) {
+    char *command = cli_get_arg(2, argc, argv);
+    char *name = cli_get_arg(3, argc, argv);
+
+    if (!is_null_or_empty(hash) && !is_null_or_empty(command) && !is_null_or_empty(name)) {
+
         char *existing = archive_storage_find_file(hash);
         if (existing != NULL) {
 
             printf("File: %s\n", existing);
 
-            cJSON *metadata = cJSON_CreateObject();
-            if (metadata == NULL)
-                fail(EX_DATAERR, "Failed to create JSON Object");
+            if (strcasecmp(command, "add-origin") == 0) {
 
-            i = cli_get_opt_idx("-origin", argc, argv);
-            if (i > 0) {
-                if (cJSON_AddStringToObject(metadata, "origin", argv[i]) == NULL)
-                    fail(EX_DATAERR, "Failed to add origin");
-            }
+                cJSON *origin = archive_metadata_json_get_origin(name);
+                if (origin == NULL)
+                    fail(EX_DATAERR, "Failed to get/create JSON Object");
 
-            i = cli_get_opt_idx("-tag", argc, argv);
-            if (i > 0) {
-                cJSON *tags = cJSON_AddArrayToObject(metadata, "tags");
+                cJSON *tags = archive_metadata_json_get_tags(origin);
                 if (tags == NULL)
-                    fail(EX_DATAERR, "Failed to add tags");
-                for (; i < argc; i++) {
+                    fail(EX_DATAERR, "Failed to get/create tags");
+
+                for (int i = 4; i < argc; i++) {
                     if (argv[i][0] == '-')
                         break;
-
-                    cJSON *tag = cJSON_CreateString(argv[i]);
-                    if (tag == NULL)
-                        fail(EX_DATAERR, "Failed to create tag item");
-                    cJSON_AddItemToArray(tags, tag);
-
+                    archive_metadata_json_add_tag(tags, argv[i]);
                 }
+
+                char *json = cJSON_Print(archive_metadata_json_get());
+                printf("META-DATA:\n%s\n\n", json);
+                free(json);
+
+                archive_metadata_json_close();
+
+            } else {
+                fprintf(stderr, "Unknown command: '%s'\n", command);
             }
-
-            char *json = cJSON_Print(metadata);
-            printf("META-DATA:\n%s\n\n", json);
-
-            free(json);
-            cJSON_Delete(metadata);
 
             free(existing);
         } else {
