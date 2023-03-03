@@ -93,9 +93,13 @@ int main(int argc, char *argv[]) {
 
             if (strcasecmp(command, "add-origin") == 0) {
 
-                cJSON *origin = archive_metadata_json_get_origin(name);
+                cJSON *metadata = archive_metadata_json_open(hash);
+                if (metadata == NULL)
+                    fail(EX_DATAERR, "Failed to load/create metadata JSON Object");
+
+                cJSON *origin = archive_metadata_json_get_origin(metadata, name);
                 if (origin == NULL)
-                    fail(EX_DATAERR, "Failed to get/create JSON Object");
+                    fail(EX_DATAERR, "Failed to get/create origin JSON Object");
 
                 cJSON *tags = archive_metadata_json_get_tags(origin);
                 if (tags == NULL)
@@ -107,11 +111,11 @@ int main(int argc, char *argv[]) {
                     archive_metadata_json_add_tag(tags, argv[i]);
                 }
 
-                char *json = cJSON_Print(archive_metadata_json_get());
+                char *json = cJSON_Print(metadata);
                 printf("META-DATA:\n%s\n\n", json);
                 free(json);
 
-                archive_metadata_json_close();
+                archive_metadata_json_close(metadata, hash);
 
             } else {
                 fprintf(stderr, "Unknown command: '%s'\n", command);

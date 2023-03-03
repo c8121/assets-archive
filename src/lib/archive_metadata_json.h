@@ -20,35 +20,129 @@
 #ifndef ASSETS_ARCHIVE_METADATA_JSON
 #define ASSETS_ARCHIVE_METADATA_JSON
 
-#include "char_util.h"
-
 #ifndef cJSON__h
+
+#include <stdio.h>
 
 #include "../3rd/cjson/cJSON.h"
 #include "../3rd/cjson/cJSON.c"
 
 #endif
 
+#include "char_util.h"
+#include "char_buffer_util.h"
+#include "file_util.h"
+#include "archive_storage.h"
 
-cJSON *metadata_json = NULL;
+char *archive_metadata_json_suffix = NULL;
+int archive_metadata_json_suffix_len = -1;
 
 /**
  *
  */
-cJSON *archive_metadata_json_get() {
+void __archive_metadata_json_init() {
 
-    if (metadata_json != NULL)
-        return metadata_json;
+    if (archive_metadata_json_suffix == NULL)
+        archive_metadata_json_suffix = ".json";
+    if (archive_metadata_json_suffix_len == -1)
+        archive_metadata_json_suffix_len = strnlen(archive_metadata_json_suffix, 255);
+}
 
-    metadata_json = cJSON_CreateObject();
+/**
+ * See archive_metadata_sjon_suffix.
+ * Uses archive_storage_file_suffix
+ *
+ * Note: Caller must free result
+ */
+char *archive_metadata_json_get_path(char *hash) {
+
+    __archive_metadata_json_init();
+
+    return archive_storage_get_path_with_suffix(
+            hash,
+            archive_metadata_json_suffix,
+            archive_metadata_json_suffix_len
+    );
+}
+
+
+/**
+ * Load JSON metadata from given file_name
+ */
+cJSON *archive_metadata_json_load(char *file_name) {
+
+    if (!file_exists(file_name)) {
+        fprintf(stderr, "Metadata file not found: %s\n", file_name);
+        return NULL;
+    }
+
+    struct char_buffer *cb = NULL;
+    FILE *fp = fopen(file_name, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Failed to open config-file: %s\n", file_name);
+        return NULL;
+    }
+
+    char buf[1024];
+    while (fgets(buf, 1024, fp) != NULL) {
+        cb = char_buffer_append(cb, buf, strnlen(buf, 1024));
+    }
+
+    fclose(fp);
+
+    char *json = char_buffer_copy(cb);
+    cJSON *ret = cJSON_Parse(json);
+    free(json);
+
+    return ret;
+}
+
+/**
+ * @return 1 on success, 0 on fail
+ */
+int archive_metadata_json_write(cJSON *metadata_json, char *file_name) {
+
+    FILE *fp = fopen(file_name, "w");
+    if (fp == NULL) {
+        fprintf(stderr, "Failed to open config-file: %s\n", file_name);
+        return 0;
+    }
+
+    char *json = cJSON_Print(metadata_json);
+    fputs(json, fp);
+    free(json);
+
+    fclose(fp);
+
+    return 1;
+}
+
+/**
+ * Load metadata (if exists), otherwise create empty JSON object.
+ */
+cJSON *archive_metadata_json_open(char *hash) {
+
+    char *file_name = archive_metadata_json_get_path(hash);
+
+    cJSON *metadata_json = archive_metadata_json_load(file_name);
+    if (metadata_json == NULL)
+        metadata_json = cJSON_CreateObject();
 
     return metadata_json;
 }
 
 /**
- *
+ * Save metadata an free memory
  */
-void archive_metadata_json_close() {
+void archive_metadata_json_close(cJSON *metadata_json, char *hash) {
+
+    char *file_name = archive_metadata_json_get_path(hash);
+
+    if (file_name != NULL)
+        archive_metadata_json_write(metadata_json, file_name);
+    else
+        fprintf(stderr, "Cannot save metadata\n");
+
     if (metadata_json != NULL) {
         cJSON_Delete(metadata_json);
         metadata_json = NULL;
@@ -58,12 +152,9 @@ void archive_metadata_json_close() {
 /**
  *
  */
-cJSON *archive_metadata_json_get_origin(const char *name) {
+cJSON *archive_metadata_json_get_origin(cJSON *metadata_json, const char *name) {
 
     if (is_null_or_empty(name))
-        return NULL;
-
-    if (archive_metadata_json_get() == NULL)
         return NULL;
 
     cJSON *origins = cJSON_GetObjectItem(metadata_json, "origins");
@@ -139,6 +230,12 @@ cJSON *archive_metadata_json_add_tag(cJSON *tags, const char *tag) {
     if (tag_json == NULL) {
         fprintf(stderr, "Failed to create tag\n");
         return NULL;
+    }
+
+    cJSON *existing;
+    cJSON_ArrayForEach(existing, tags) {
+        if (cJSON_IsString(existing) && strncmp(existing->valuestring, tag, 1024) == 0)
+            return existing;
     }
 
     if (!cJSON_AddItemToArray(tags, tag_json)) {

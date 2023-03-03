@@ -101,11 +101,11 @@ char *archive_storage_time_period_name(time_t t) {
 /**
  * Get a path in form:
  *
- * /archive_storage_base_dir/time-period/hash(0,2)/hash(2...)
+ * /archive_storage_base_dir/time-period/hash(0,2)/hash(2...).suffix
  *
  * Note: Caller must free result
  */
-char *archive_storage_get_path(char *hash) {
+char *archive_storage_get_path_with_suffix(char *hash, char *suffix, int suffix_len) {
 
     __archive_storage_init();
 
@@ -121,13 +121,30 @@ char *archive_storage_get_path(char *hash) {
     cb = char_buffer_append(cb, hash, SPLIT_HASH_AT);
     cb = char_buffer_append(cb, path_separator, path_separator_len);
     cb = char_buffer_append(cb, hash + SPLIT_HASH_AT, strnlen(hash, 255) - SPLIT_HASH_AT);
-    cb = char_buffer_append(cb, archive_storage_file_suffix, archive_storage_file_suffix_len);
+
+    if (!is_null_or_empty(suffix))
+        cb = char_buffer_append(cb, suffix, suffix_len);
 
     char *ret = char_buffer_copy(cb);
     char_buffer_free(cb);
     free(period_name);
 
     return ret;
+}
+
+/**
+ * See archive_storage_get_path_with_suffix.
+ * Uses archive_storage_file_suffix
+ *
+ * Note: Caller must free result
+ */
+char *archive_storage_get_path(char *hash) {
+
+    return archive_storage_get_path_with_suffix(
+            hash,
+            archive_storage_file_suffix,
+            archive_storage_file_suffix_len
+    );
 }
 
 /**
