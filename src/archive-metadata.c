@@ -24,6 +24,8 @@
 #include "3rd/cjson/cJSON.h"
 #include "3rd/cjson/cJSON.c"
 
+#include "lib/util.h"
+
 #include "lib/cli_args.h"
 #include "lib/config_file.h"
 
@@ -54,11 +56,6 @@ void usage_message(int argc, char *argv[]) {
     printf("    -help:   This message.\n");
 }
 
-void fail(int status, char *message) {
-    fprintf(stderr, "%s\n", message);
-    exit(status);
-}
-
 /**
  * 
  */
@@ -73,12 +70,12 @@ int main(int argc, char *argv[]) {
     int i = cli_get_opt_idx("-config", argc, argv);
     if (i > 0) {
         if (read_config_file(argv[i], &apply_config) == 0)
-            fail(EX_IOERR, "Failed to read from config file\n");
+            fail(EX_IOERR, "Failed to read from config file");
     }
 
     // Check environment
     if (!archive_storage_validate())
-        fail(EX_IOERR, "Archive storage not valid\n");
+        fail(EX_IOERR, "Archive storage not valid");
 
     char *hash = cli_get_arg(1, argc, argv);
     char *command = cli_get_arg(2, argc, argv);

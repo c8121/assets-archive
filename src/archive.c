@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <sysexits.h>
 
+#include "lib/util.h"
+
 #include "lib/cli_args.h"
 #include "lib/config_file.h"
 
@@ -65,19 +67,23 @@ int main(int argc, char *argv[]) {
     int i = cli_get_opt_idx("-config", argc, argv);
     if (i > 0) {
         if (read_config_file(argv[i], &apply_config) == 0) {
-            fprintf(stderr, "Failed to read from config file: %s\n", argv[i]);
             if (print_hash_only)
                 printf("FAIL\n");
-            exit(EX_IOERR);
+            fail(EX_IOERR, "Failed to read from config file");
         }
     }
 
     // Check environment
     if (!archive_storage_validate()) {
-        fprintf(stderr, "Archive storage not valid\n");
         if (print_hash_only)
             printf("FAIL\n");
-        exit(EX_IOERR);
+        fail(EX_IOERR, "Archive storage not valid");
+    }
+
+    // Check if there is at least one file, show usage otherwise
+    if (cli_get_arg(1, argc, argv) == NULL) {
+        usage_message(argc, argv);
+        return EX_USAGE;
     }
 
     // Add files
@@ -85,10 +91,9 @@ int main(int argc, char *argv[]) {
     char *file_name;
     while ((file_name = cli_get_arg(f++, argc, argv)) != NULL) {
         if (!file_exists(file_name)) {
-            fprintf(stderr, "File not found: %s\n", file_name);
             if (print_hash_only)
                 printf("FAIL\n");
-            return EX_IOERR;
+            fail(EX_IOERR, "File not found");
         }
         if (!print_hash_only)
             printf("Source: %s\n", file_name);
@@ -114,9 +119,9 @@ int main(int argc, char *argv[]) {
                 free(existing);
             }
         } else {
-            fprintf(stderr, "Failed to obtain hash for %s\n", file_name);
             if (print_hash_only)
                 printf("FAIL\n");
+            fail(EX_IOERR, "Failed to obtain hash");
         }
 
         if (hash != NULL)
