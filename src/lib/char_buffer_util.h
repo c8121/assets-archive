@@ -97,6 +97,12 @@ struct char_buffer *char_buffer_append(struct char_buffer *cb, const char *s, si
  */
 char *char_buffer_copy(struct char_buffer *cb) {
 
+    if (cb == NULL) {
+        char *s = malloc(1);
+        *s = '\0';
+        return s;
+    }
+
     size_t len = 0;
     struct char_buffer *b = cb;
     while (b != NULL) {
