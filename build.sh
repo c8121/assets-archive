@@ -16,5 +16,6 @@ if [[ ! -d "$binDir" ]] ; then
 fi
 
 cd "$BASE"
-gcc -Wall -o "$binDir/archive" "$sourceDir/archive.c"
-gcc -Wall -o "$binDir/archive-metadata" "$sourceDir/archive-metadata.c"
+gcc -Wall -o "$binDir/archive" "$sourceDir/archive.c" -lbsd
+gcc -Wall -o "$binDir/archive-metadata" "$sourceDir/archive-metadata.c" -lbsd
+gcc -Wall -o "$binDir/archive-export" "$sourceDir/archive-export.c" -lbsd

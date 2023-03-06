@@ -21,6 +21,7 @@
 #define ASSETS_ARCHIVE_STORAGE
 
 #include <stdlib.h>
+#include <bsd/stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
@@ -39,8 +40,12 @@ int archive_storage_base_dir_len = -1;
 char *archive_storage_file_suffix = NULL;
 int archive_storage_file_suffix_len = -1;
 
+
 const char *path_separator = "/";
 const int path_separator_len = 1;
+
+const char *archive_storage_temp_dirname = "tmp";
+const int archive_storage_temp_dirname_len = 3;
 
 mode_t archive_file_permissions = S_IRUSR | S_IWUSR; //rw-------
 mode_t archive_dir_permissions = S_IRUSR | S_IWUSR | S_IXUSR; //rwx------
@@ -59,6 +64,48 @@ void __archive_storage_init() {
         archive_storage_file_suffix = ".archive";
     if (archive_storage_file_suffix_len == -1)
         archive_storage_file_suffix_len = strnlen(archive_storage_file_suffix, 255);
+
+    //Create seed for rand() used in archive_storage_tmpnam.
+    srand(time(NULL));
+}
+
+/**
+ * @return 1 on success, 0 on fail
+ */
+int __archive_storage_copy(const char *src, const char *dst) {
+
+    int in = open(src, O_RDONLY);
+    if (in == -1) {
+        fprintf(stderr, "Failed to open file for reading: %s\n", src);
+        return 0;
+    }
+
+    int out = open(dst, O_CREAT | O_WRONLY | O_TRUNC, archive_file_permissions);
+    if (out == -1) {
+        fprintf(stderr, "Failed to open file for writing: %s\n", dst);
+        return 0;
+    }
+
+    char buf[COPY_BUFFER_SIZE];
+    int r;
+    while ((r = read(in, buf, COPY_BUFFER_SIZE)) > 0) {
+        if (write(out, buf, r) != r) {
+            fprintf(stderr, "write() returned error or incomplete write\n");
+            break;
+        }
+    }
+
+    if (close(out) == -1) {
+        fprintf(stderr, "Failed to close output file: %s\n", dst);
+        return 0;
+    }
+
+    if (close(in) == -1) {
+        fprintf(stderr, "Failed to close input file: %s\n", dst);
+        return 0;
+    }
+
+    return 1;
 }
 
 
@@ -188,47 +235,17 @@ int archive_storage_mkdir(const char *file_path) {
  */
 int archive_storage_add_file(const char *src, const char *dst) {
 
+    if (strstr(dst, archive_storage_base_dir) != dst) {
+        fprintf(stderr, "Invalid destination path (not within %s): %s\n", archive_storage_base_dir, dst);
+        return 0;
+    }
+
     if (!archive_storage_mkdir(dst)) {
         fprintf(stderr, "Failed to create direcotry for %s\n", dst);
         return 0;
     }
 
-    int in = open(src, O_RDONLY);
-    if (in == -1) {
-        fprintf(stderr,
-                "Failed to open file for reading: %s\n", src);
-        return 0;
-    }
-
-    int out = open(dst, O_CREAT | O_WRONLY | O_TRUNC, archive_file_permissions);
-    if (out == -1) {
-        fprintf(stderr,
-                "Failed to open file for writing: %s\n", dst);
-        return 0;
-    }
-
-    char buf[COPY_BUFFER_SIZE];
-    int r;
-    while ((r = read(in, buf, COPY_BUFFER_SIZE)) > 0) {
-        if (write(out, buf, r) != r) {
-            fprintf(stderr,
-                    "write() returned error or incomplete write\n");
-        }
-    }
-
-    if (close(out) == -1) {
-        fprintf(stderr,
-                "Failed to close output file: %s\n", dst);
-        return 0;
-    }
-
-    if (close(in) == -1) {
-        fprintf(stderr,
-                "Failed to close input file: %s\n", dst);
-        return 0;
-    }
-
-    return 1;
+    return __archive_storage_copy(src, dst);
 }
 
 /**
@@ -285,6 +302,49 @@ char *archive_storage_find_file(char *hash) {
     }
 
     closedir(d);
+
+    return path;
+}
+
+/**
+ * @return 1 on success, 0 on fail
+ */
+int archive_storage_get_file(const char *src, const char *dst) {
+
+    if (strstr(src, archive_storage_base_dir) != src) {
+        fprintf(stderr, "Invalid source path (not within %s): %s\n", archive_storage_base_dir, src);
+        return 0;
+    }
+
+    return __archive_storage_copy(src, dst);
+}
+
+/**
+ * @return temp file name
+ * Note: Caller must free result
+ */
+char *archive_storage_tmpnam(char *suffix) {
+
+    __archive_storage_init();
+
+    struct char_buffer *cb = NULL;
+    cb = char_buffer_append(cb, archive_storage_base_dir, strnlen(archive_storage_base_dir, 255));
+    cb = char_buffer_append(cb, path_separator, path_separator_len);
+    cb = char_buffer_append(cb, archive_storage_temp_dirname, archive_storage_temp_dirname_len);
+    cb = char_buffer_append(cb, path_separator, path_separator_len);
+
+    char file_name[512];
+    snprintf(file_name, 512, "%jd-%i-%X%s", time(NULL), rand(), arc4random(), suffix);
+    cb = char_buffer_append(cb, file_name, strnlen(file_name, 512));
+
+    char *path = char_buffer_copy(cb);
+    char_buffer_free(cb);
+    cb = NULL;
+
+    if (!archive_storage_mkdir(path)) {
+        fprintf(stderr, "Failed to create direcotry for %s\n", path);
+        return NULL;
+    }
 
     return path;
 }
