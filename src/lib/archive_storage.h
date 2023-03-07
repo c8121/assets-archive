@@ -327,26 +327,36 @@ char *archive_storage_tmpnam(char *suffix) {
 
     __archive_storage_init();
 
-    struct char_buffer *cb = NULL;
-    cb = char_buffer_append(cb, archive_storage_base_dir, strnlen(archive_storage_base_dir, 255));
-    cb = char_buffer_append(cb, path_separator, path_separator_len);
-    cb = char_buffer_append(cb, archive_storage_temp_dirname, archive_storage_temp_dirname_len);
-    cb = char_buffer_append(cb, path_separator, path_separator_len);
+    for (int i = 0; i < 1000; i++) {
 
-    char file_name[512];
-    snprintf(file_name, 512, "%jd-%i-%X%s", time(NULL), rand(), arc4random(), suffix);
-    cb = char_buffer_append(cb, file_name, strnlen(file_name, 512));
+        struct char_buffer *cb = NULL;
+        cb = char_buffer_append(cb, archive_storage_base_dir, strnlen(archive_storage_base_dir, 255));
+        cb = char_buffer_append(cb, path_separator, path_separator_len);
+        cb = char_buffer_append(cb, archive_storage_temp_dirname, archive_storage_temp_dirname_len);
+        cb = char_buffer_append(cb, path_separator, path_separator_len);
 
-    char *path = char_buffer_copy(cb);
-    char_buffer_free(cb);
-    cb = NULL;
+        char file_name[512];
+        snprintf(file_name, 512, "%jd-%i-%X%s", time(NULL), rand(), arc4random(), suffix);
+        cb = char_buffer_append(cb, file_name, strnlen(file_name, 512));
 
-    if (!archive_storage_mkdir(path)) {
-        fprintf(stderr, "Failed to create direcotry for %s\n", path);
-        return NULL;
+        char *path = char_buffer_copy(cb);
+        char_buffer_free(cb);
+        cb = NULL;
+
+        if (!archive_storage_mkdir(path)) {
+            fprintf(stderr, "Failed to create directory for %s\n", path);
+            return NULL;
+        }
+
+        if (!file_exists(path_separator)) {
+            return path;
+        }
+
+        usleep(100);
     }
 
-    return path;
+    fprintf(stderr, "Cannot create temp filename\n");
+    return NULL;
 }
 
 #endif //ASSETS_ARCHIVE_STORAGE
