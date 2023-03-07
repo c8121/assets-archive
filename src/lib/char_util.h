@@ -20,6 +20,21 @@
 #ifndef ASSETS_ARCHIVE_CHAR_UTIL
 #define ASSETS_ARCHIVE_CHAR_UTIL
 
+#include <string.h>
+
+/**
+ * @return A copy of given string
+ * Caller must free result
+ */
+char *str_copy(const char *s, size_t len) {
+
+    char *copy = malloc(len + 1);
+    memset(copy, 0, len + 1);
+    strncpy(copy, s, len);
+
+    return copy;
+}
+
 /**
  * @return 1 if it is newline , 0 if not
  */

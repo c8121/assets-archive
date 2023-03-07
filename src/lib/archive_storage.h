@@ -35,6 +35,9 @@
 
 #define COPY_BUFFER_SIZE 4096
 
+#define DEFAULT_STORAGE_BASE_DIR "/tmp"
+#define DEFAULT_STORAGE_FILE_SUFFIX ".archive"
+
 char *archive_storage_base_dir = NULL;
 int archive_storage_base_dir_len = -1;
 char *archive_storage_file_suffix = NULL;
@@ -56,12 +59,12 @@ mode_t archive_dir_permissions = S_IRUSR | S_IWUSR | S_IXUSR; //rwx------
 void __archive_storage_init() {
 
     if (archive_storage_base_dir == NULL)
-        archive_storage_base_dir = "/tmp";
+        archive_storage_base_dir = str_copy(DEFAULT_STORAGE_BASE_DIR, strlen(DEFAULT_STORAGE_BASE_DIR));
     if (archive_storage_base_dir_len == -1)
         archive_storage_base_dir_len = strnlen(archive_storage_base_dir, 255);
 
     if (archive_storage_file_suffix == NULL)
-        archive_storage_file_suffix = ".archive";
+        archive_storage_file_suffix = str_copy(DEFAULT_STORAGE_FILE_SUFFIX, strlen(DEFAULT_STORAGE_FILE_SUFFIX));
     if (archive_storage_file_suffix_len == -1)
         archive_storage_file_suffix_len = strnlen(archive_storage_file_suffix, 255);
 
@@ -241,7 +244,7 @@ int archive_storage_add_file(const char *src, const char *dst) {
     }
 
     if (!archive_storage_mkdir(dst)) {
-        fprintf(stderr, "Failed to create direcotry for %s\n", dst);
+        fprintf(stderr, "Failed to create directory for %s\n", dst);
         return 0;
     }
 

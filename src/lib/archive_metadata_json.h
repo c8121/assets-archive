@@ -34,6 +34,8 @@
 #include "file_util.h"
 #include "archive_storage.h"
 
+#define DEFAULT_ARCHIVE_METADATA_SUFFIX ".json"
+
 char *archive_metadata_json_suffix = NULL;
 int archive_metadata_json_suffix_len = -1;
 
@@ -43,7 +45,8 @@ int archive_metadata_json_suffix_len = -1;
 void __archive_metadata_json_init() {
 
     if (archive_metadata_json_suffix == NULL)
-        archive_metadata_json_suffix = ".json";
+        archive_metadata_json_suffix = str_copy(DEFAULT_ARCHIVE_METADATA_SUFFIX,
+                                                strlen(DEFAULT_ARCHIVE_METADATA_SUFFIX));
     if (archive_metadata_json_suffix_len == -1)
         archive_metadata_json_suffix_len = strnlen(archive_metadata_json_suffix, 255);
 }
@@ -91,6 +94,8 @@ cJSON *archive_metadata_json_load(char *file_name) {
     fclose(fp);
 
     char *json = char_buffer_copy(cb);
+    char_buffer_free(cb);
+
     cJSON *ret = cJSON_Parse(json);
     free(json);
 

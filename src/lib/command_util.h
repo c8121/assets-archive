@@ -20,6 +20,7 @@
 #ifndef ASSETS_ARCHIVE_COMMAND_UTIL
 #define ASSETS_ARCHIVE_COMMAND_UTIL
 
+#include "char_util.h"
 #include "char_buffer_util.h"
 
 #define COMMAND_READ_BUFFER_LENGTH 512
@@ -34,7 +35,7 @@ struct command_args {
 /**
  * @param args Can be NULL
  */
-struct command_args *command_args_append(struct command_args *args, char *name, char *value) {
+struct command_args *command_args_append(struct command_args *args, const char *name, char *value) {
 
     struct command_args *ret = malloc(sizeof(struct command_args));
     if (args == NULL) {
@@ -43,8 +44,8 @@ struct command_args *command_args_append(struct command_args *args, char *name, 
         ret->next = args;
     }
 
-    ret->name = name;
-    ret->value = value;
+    ret->name = str_copy(name, strlen(name));
+    ret->value = str_copy(value, strlen(value));
     return ret;
 
 }
@@ -72,6 +73,8 @@ void command_args_free(struct command_args *args) {
         f = a;
         a = a->next;
 
+        free(f->name);
+        free(f->value);
         free(f);
     }
 }

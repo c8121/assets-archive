@@ -109,6 +109,7 @@ char *char_buffer_copy(struct char_buffer *cb) {
         len += b->len;
         b = b->next;
     }
+    len += 1;
 
     char *s = malloc(len + 1);
     char *p = s;
