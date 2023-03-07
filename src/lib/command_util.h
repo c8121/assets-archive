@@ -35,7 +35,7 @@ struct command_args {
 /**
  * @param args Can be NULL
  */
-struct command_args *command_args_append(struct command_args *args, const char *name, char *value) {
+struct command_args *command_args_append(struct command_args *args, const char *name, const char *value) {
 
     struct command_args *ret = malloc(sizeof(struct command_args));
     if (args == NULL) {
@@ -104,6 +104,8 @@ char *command_read(char *command) {
         pclose(cmd);
     } else {
         fprintf(stderr, "Broken pipe: %s\n", command);
+        char_buffer_free(cb);
+        return NULL;
     }
 
     char *s = char_buffer_copy(cb);

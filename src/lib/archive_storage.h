@@ -30,6 +30,7 @@
 
 #include "char_buffer_util.h"
 #include "file_util.h"
+#include "command_util.h"
 
 #define SPLIT_HASH_AT 2
 
@@ -42,6 +43,15 @@ char *archive_storage_base_dir = NULL;
 int archive_storage_base_dir_len = -1;
 char *archive_storage_file_suffix = NULL;
 int archive_storage_file_suffix_len = -1;
+
+
+char *archive_storage_file_dencode_keyfile = "";
+char *archive_storage_file_encode_command = "gzip -v -c -n \"{{input_file}}\" > \"{{output_file}}\"";
+char *archive_storage_file_decode_command = "gzip -v -c -d \"{{input_file}}\" > \"{{output_file}}\"";
+//char *archive_storage_file_dencode_keyfile = "/tmp/dencode.key";
+//char *archive_storage_file_encode_command = "gzip -v -c -n \"{{input_file}}\" | openssl enc -aes-256-cbc -pbkdf2 -pass \"file:{{key_file}}\" -e > \"{{output_file}}\"";
+//char *archive_storage_file_decode_command = "openssl enc -aes-256-cbc -pbkdf2 -pass \"file:{{key_file}}\" -d -in \"{{input_file}}\" | gzip -v -c -d  > \"{{output_file}}\"";
+
 
 
 const char *path_separator = "/";
@@ -109,6 +119,43 @@ int __archive_storage_copy(const char *src, const char *dst) {
     }
 
     return 1;
+}
+
+/**
+ * Decode or encode file
+ *
+ * @return 1 on success, 0 on fail
+ */
+int __archive_storage_copy_dencode(const char *src, const char *dst, char *dencode_command) {
+
+    if (dencode_command != archive_storage_file_encode_command
+        && dencode_command != archive_storage_file_decode_command) {
+        fprintf(stderr, "Invalid command, must be either '%s' or '%s'\n", archive_storage_file_encode_command,
+                archive_storage_file_decode_command);
+        return 0;
+    }
+
+    struct command_args *args = command_args_append(NULL, "input_file", src);
+    args = command_args_append(args, "output_file", dst);
+
+    if (!is_null_or_empty(archive_storage_file_dencode_keyfile))
+        args = command_args_append(args, "key_file", archive_storage_file_dencode_keyfile);
+
+    char *command = command_build(dencode_command, args);
+
+    int ret = 0;
+    char *command_output = command_read(command);
+    if (command_output != NULL) {
+        ret = 1;
+        if (command_output[0] != '\0')
+            fprintf(stderr, "%s", command_output);
+        free(command_output);
+    }
+
+    free(command);
+    command_args_free(args);
+
+    return ret;
 }
 
 
@@ -233,6 +280,7 @@ int archive_storage_mkdir(const char *file_path) {
     return 1;
 }
 
+
 /**
  * @return 1 on success, 0 on fail
  */
@@ -248,7 +296,11 @@ int archive_storage_add_file(const char *src, const char *dst) {
         return 0;
     }
 
-    return __archive_storage_copy(src, dst);
+    if (!is_null_or_empty(archive_storage_file_encode_command)) {
+        return __archive_storage_copy_dencode(src, dst, archive_storage_file_encode_command);
+    } else {
+        return __archive_storage_copy(src, dst);
+    }
 }
 
 /**
@@ -319,7 +371,11 @@ int archive_storage_get_file(const char *src, const char *dst) {
         return 0;
     }
 
-    return __archive_storage_copy(src, dst);
+    if (!is_null_or_empty(archive_storage_file_decode_command)) {
+        return __archive_storage_copy_dencode(src, dst, archive_storage_file_decode_command);
+    } else {
+        return __archive_storage_copy(src, dst);
+    }
 }
 
 /**
@@ -351,7 +407,7 @@ char *archive_storage_tmpnam(char *suffix) {
             return NULL;
         }
 
-        if (!file_exists(path_separator)) {
+        if (!file_exists(path_separator) && !dir_exists(path_separator)) {
             return path;
         }
 
