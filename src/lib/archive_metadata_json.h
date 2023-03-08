@@ -75,14 +75,14 @@ char *archive_metadata_json_get_path(char *hash) {
 cJSON *archive_metadata_json_load(char *file_name) {
 
     if (!file_exists(file_name)) {
-        fprintf(stderr, "Metadata file not found: %s\n", file_name);
+        fprintf(stderr, "Metadata file does not exist: %s\n", file_name);
         return NULL;
     }
 
     struct char_buffer *cb = NULL;
     FILE *fp = fopen(file_name, "r");
     if (fp == NULL) {
-        fprintf(stderr, "Failed to open config-file: %s\n", file_name);
+        fprintf(stderr, "Failed to open metadata file for reading: %s\n", file_name);
         return NULL;
     }
 
@@ -109,7 +109,7 @@ int archive_metadata_json_write(cJSON *metadata_json, char *file_name) {
 
     FILE *fp = fopen(file_name, "w");
     if (fp == NULL) {
-        fprintf(stderr, "Failed to open config-file: %s\n", file_name);
+        fprintf(stderr, "Failed to open metadata file for writing: %s\n", file_name);
         return 0;
     }
 
