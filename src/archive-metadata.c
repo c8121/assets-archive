@@ -37,12 +37,15 @@ struct command {
     void *f;
 };
 
+void command_get(int argi, int argc, char *argv[]);
+
 void command_add_origin(int argi, int argc, char *argv[]);
 
 struct command commands[] = {
+        {"get", &command_get},
         {"add-origin", &command_add_origin}
 };
-#define NUM_COMMANDS 1
+#define NUM_COMMANDS 2
 
 /**
  *
@@ -58,10 +61,11 @@ void apply_config(char *section_name, char *name, char *value) {
  */
 void usage_message(int argc, char *argv[]) {
     printf("USAGE:\n");
-    printf("%s <hash> <command> [<command>...] [options]\n", argv[0]);
+    printf("%s <command> [<command>...] [options]\n", argv[0]);
     printf("\n");
     printf("Available commands:\n");
-    printf("    add-origin <name> [-tags [tags,...]]\n");
+    printf("    get <hash>\n");
+    printf("    add-origin <hash> <name> [-tags [tags,...]]\n");
     printf("\n");
     printf("Available options:\n");
     printf("    -config: File containing application configuration.\n");
@@ -88,6 +92,32 @@ void print_metadata(cJSON *metadata) {
     char *json = cJSON_Print(metadata);
     printf("META-DATA:\n%s\n\n", json);
     free(json);
+}
+
+/**
+ *
+ */
+void command_get(int argi, int argc, char *argv[]) {
+
+    if (argc < argi + 1)
+        fail(EX_USAGE, "Missing hash");
+
+    char *hash = argv[argi + 1];
+    if (is_null_or_empty(hash))
+        fail(EX_DATAERR, "Hash cannot be empty");
+
+    char *file = archive_storage_find_file(hash);
+    if (file == NULL)
+        fail(EX_DATAERR, "No such file");
+    free(file);
+
+    cJSON *metadata = archive_metadata_json_open(hash);
+    if (metadata == NULL)
+        fail(EX_DATAERR, "Failed to load/create metadata JSON Object");
+
+    print_metadata(metadata);
+
+    cJSON_Delete(metadata);
 }
 
 /**
