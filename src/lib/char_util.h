@@ -62,5 +62,19 @@ int is_null_or_empty(const char *s) {
     return 0;
 }
 
+/**
+ * @return 1 if s1 == s2
+ */
+int is_equal(const char *s1, const char *s2) {
+
+    if (s1 == s2)
+        return 1;
+
+    size_t l = strlen(s1);
+    if (l != strlen(s2))
+        return 0;
+
+    return strncmp(s1, s2, l) == 0 ? 1 : 0;
+}
 
 #endif //ASSETS_ARCHIVE_CHAR_UTIL

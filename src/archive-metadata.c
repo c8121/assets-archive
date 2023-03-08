@@ -32,6 +32,18 @@
 #include "lib/archive_storage.h"
 #include "lib/archive_metadata_json.h"
 
+struct command {
+    char *name;
+    void *f;
+};
+
+void command_add_origin(int argi, int argc, char *argv[]);
+
+struct command commands[] = {
+        {"add-origin", &command_add_origin}
+};
+#define NUM_COMMANDS 1
+
 /**
  *
  */
@@ -46,14 +58,96 @@ void apply_config(char *section_name, char *name, char *value) {
  */
 void usage_message(int argc, char *argv[]) {
     printf("USAGE:\n");
-    printf("%s <hash> <command> [options]\n", argv[0]);
+    printf("%s <hash> <command> [<command>...] [options]\n", argv[0]);
     printf("\n");
     printf("Available commands:\n");
-    printf("    add-origin <name> [tags,...]\n");
+    printf("    add-origin <name> [-tags [tags,...]]\n");
     printf("\n");
     printf("Available options:\n");
     printf("    -config: File containing application configuration.\n");
     printf("    -help:   This message.\n");
+}
+
+/**
+ *
+ */
+void *get_command(char *s) {
+
+    for (int i = 0; i < NUM_COMMANDS; i++) {
+        if (is_equal(commands[i].name, s))
+            return commands[i].f;
+    }
+
+    return NULL;
+}
+
+/**
+ *
+ */
+void print_metadata(cJSON *metadata) {
+    char *json = cJSON_Print(metadata);
+    printf("META-DATA:\n%s\n\n", json);
+    free(json);
+}
+
+/**
+ *
+ */
+void command_add_origin(int argi, int argc, char *argv[]) {
+
+    char *hash = NULL;
+    cJSON *metadata = NULL;
+    cJSON *origin = NULL;
+
+    for (int i = argi + 1; i < argc; i++) {
+        if (i == argi + 1) {
+
+            hash = argv[i];
+            if (is_null_or_empty(hash))
+                fail(EX_DATAERR, "Hash cannot be empty");
+
+            metadata = archive_metadata_json_open(hash);
+            if (metadata == NULL)
+                fail(EX_DATAERR, "Failed to load/create metadata JSON Object");
+
+        } else if (i == argi + 2) {
+
+            if (metadata != NULL) {
+
+                if (is_null_or_empty(argv[i]))
+                    fail(EX_DATAERR, "Name cannot be empty");
+
+                origin = archive_metadata_json_get_origin(metadata, argv[i]);
+                if (origin == NULL)
+                    fail(EX_DATAERR, "Failed to get/create origin JSON Object");
+            }
+
+
+        } else if (is_equal("-tags", argv[i])) {
+
+            if (origin != NULL) {
+
+                cJSON *tags = archive_metadata_json_get_tags(origin);
+                if (tags == NULL)
+                    fail(EX_DATAERR, "Failed to get/create tags");
+
+                for (i++; i < argc; i++) {
+                    if (argv[i][0] == '-')
+                        break; //next option
+                    else if (get_command(argv[i]) != NULL)
+                        goto end; //next command
+                    archive_metadata_json_add_tag(tags, argv[i]);
+                }
+            }
+
+        }
+    }
+
+    end:
+    if (metadata != NULL) {
+        print_metadata(metadata);
+        archive_metadata_json_close(metadata, hash);
+    }
 }
 
 /**
@@ -64,6 +158,11 @@ int main(int argc, char *argv[]) {
     if (cli_has_opt("-help", argc, argv)) {
         usage_message(argc, argv);
         return EX_OK;
+    }
+
+    if (argc < 2) {
+        usage_message(argc, argv);
+        return EX_USAGE;
     }
 
     // Load & apply configuration
@@ -77,53 +176,13 @@ int main(int argc, char *argv[]) {
     if (!archive_storage_validate())
         fail(EX_IOERR, "Archive storage not valid");
 
-    char *hash = cli_get_arg(1, argc, argv);
-    char *command = cli_get_arg(2, argc, argv);
-    char *name = cli_get_arg(3, argc, argv);
-
-    if (!is_null_or_empty(hash) && !is_null_or_empty(command) && !is_null_or_empty(name)) {
-
-        char *existing = archive_storage_find_file(hash);
-        if (existing != NULL) {
-
-            printf("File: %s\n", existing);
-
-            if (strcasecmp(command, "add-origin") == 0) {
-
-                cJSON *metadata = archive_metadata_json_open(hash);
-                if (metadata == NULL)
-                    fail(EX_DATAERR, "Failed to load/create metadata JSON Object");
-
-                cJSON *origin = archive_metadata_json_get_origin(metadata, name);
-                if (origin == NULL)
-                    fail(EX_DATAERR, "Failed to get/create origin JSON Object");
-
-                cJSON *tags = archive_metadata_json_get_tags(origin);
-                if (tags == NULL)
-                    fail(EX_DATAERR, "Failed to get/create tags");
-
-                for (int i = 4; i < argc; i++) {
-                    if (argv[i][0] == '-')
-                        break;
-                    archive_metadata_json_add_tag(tags, argv[i]);
-                }
-
-                char *json = cJSON_Print(metadata);
-                printf("META-DATA:\n%s\n\n", json);
-                free(json);
-
-                archive_metadata_json_close(metadata, hash);
-
-            } else {
-                fprintf(stderr, "Unknown command: '%s'\n", command);
-            }
-
-            free(existing);
-        } else {
-            fprintf(stderr, "Referenced file not found: %s\n", hash);
+    // Execute commands
+    void (*f)(int, int, char *[]) = NULL;
+    for (int i = 1; i < argc; i++) {
+        f = get_command(argv[i]);
+        if (f != NULL) {
+            f(i, argc, argv);
+            f = NULL;
         }
-    } else {
-        usage_message(argc, argv);
-        return EX_USAGE;
     }
 }
