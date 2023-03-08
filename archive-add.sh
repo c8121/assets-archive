@@ -22,10 +22,15 @@ function add_to_archive() {
     echo "File not found: $file"
     return
   fi
+  file=$(realpath "$file")
 
   hash=$($ARCHIVE_COMMAND "$file" -s)
   if [ "$hash" != "FAIL" ]; then
-    $METADATA_COMMAND "$hash" "add-origin" "$file"
+
+    owner=$(stat -c '%U' "$file")
+    groups=$(grep "^$(stat -c '%G' "$file"):" /etc/group | awk -F':' '{gsub(","," "); print $4}')
+
+    $METADATA_COMMAND "add-origin" "$hash" "$file" -owner "$owner" -participants $groups
   else
     echo "Failed to add file ($hash)"
   fi
@@ -35,12 +40,9 @@ function add_to_archive() {
 
 if [ -d "$source" ]; then
 
-  old_ifs=$IFS
-  IFS=$'\n'
-  for f in $(find "$source" -type f); do
-    add_to_archive "$f"
+  find "$source" -type f -print0 | while IFS= read -r -d '' file; do
+    add_to_archive "$file"
   done
-  IFS=$old_ifs
 
 else
 
