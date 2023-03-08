@@ -33,6 +33,7 @@
 #include "char_buffer_util.h"
 #include "file_util.h"
 #include "archive_storage.h"
+#include "time_util.h"
 
 #define DEFAULT_ARCHIVE_METADATA_SUFFIX ".json"
 
@@ -49,6 +50,71 @@ void __archive_metadata_json_init() {
                                                 strlen(DEFAULT_ARCHIVE_METADATA_SUFFIX));
     if (archive_metadata_json_suffix_len == -1)
         archive_metadata_json_suffix_len = strnlen(archive_metadata_json_suffix, 255);
+}
+
+/**
+ *
+ */
+cJSON *__archive_metadata_json_get_array(cJSON *container, const char *name) {
+
+    if (container == NULL)
+        return NULL;
+
+    cJSON *array = cJSON_GetObjectItem(container, name);
+    if (array == NULL) {
+        array = cJSON_AddArrayToObject(container, name);
+        if (array == NULL) {
+            fprintf(stderr, "Failed to create tags array\n");
+            return NULL;
+        }
+    }
+
+    return array;
+}
+
+/**
+ *
+ */
+cJSON *__archive_metadata_json_add_string_to_array(cJSON *array, const char *s) {
+
+    cJSON *s_json = cJSON_CreateString(s);
+    if (s_json == NULL) {
+        fprintf(stderr, "Failed to create string element\n");
+        return NULL;
+    }
+
+    cJSON *existing;
+    cJSON_ArrayForEach(existing, array) {
+        if (cJSON_IsString(existing) && strncmp(existing->valuestring, s, 1024) == 0)
+            return existing;
+    }
+
+    if (!cJSON_AddItemToArray(array, s_json)) {
+        fprintf(stderr, "Failed to add tag\n");
+        return NULL;
+    }
+
+    return s_json;
+}
+
+cJSON *__archive_metadata_json_add_string(cJSON *container, const char *name, const char *s) {
+
+    cJSON *s_json = cJSON_CreateString(s);
+    if (s_json == NULL) {
+        fprintf(stderr, "Failed to create string element\n");
+        return NULL;
+    }
+
+    cJSON *owner = cJSON_GetObjectItem(container, name);
+    if (owner != NULL)
+        cJSON_DeleteItemFromObject(container, name);
+
+    if (!cJSON_AddItemReferenceToObject(container, name, s_json)) {
+        fprintf(stderr, "Failed to add string\n");
+        return NULL;
+    }
+
+    return s_json;
 }
 
 /**
@@ -212,45 +278,63 @@ cJSON *archive_metadata_json_get_origin(cJSON *metadata_json, const char *name) 
  *
  */
 cJSON *archive_metadata_json_get_tags(cJSON *origin) {
-
-    if (origin == NULL)
-        return NULL;
-
-    cJSON *tags = cJSON_GetObjectItem(origin, "tags");
-    if (tags == NULL) {
-        tags = cJSON_AddArrayToObject(origin, "tags");
-        if (tags == NULL) {
-            fprintf(stderr, "Failed to create tags array\n");
-            return NULL;
-        }
-    }
-
-    return tags;
+    return __archive_metadata_json_get_array(origin, "tags");
 }
 
 /**
  *
  */
 cJSON *archive_metadata_json_add_tag(cJSON *tags, const char *tag) {
+    return __archive_metadata_json_add_string_to_array(tags, tag);
+}
 
-    cJSON *tag_json = cJSON_CreateString(tag);
-    if (tag_json == NULL) {
-        fprintf(stderr, "Failed to create tag\n");
+/**
+ *
+ */
+cJSON *archive_metadata_json_set_created(cJSON *origin, const char *created) {
+    char *ts = get_valid_time_string(created);
+    if (ts == NULL)
         return NULL;
-    }
 
-    cJSON *existing;
-    cJSON_ArrayForEach(existing, tags) {
-        if (cJSON_IsString(existing) && strncmp(existing->valuestring, tag, 1024) == 0)
-            return existing;
-    }
+    cJSON *ret = __archive_metadata_json_add_string(origin, "created", ts);
+    free(ts);
 
-    if (!cJSON_AddItemToArray(tags, tag_json)) {
-        fprintf(stderr, "Failed to add tag\n");
+    return ret;
+}
+
+/**
+ *
+ */
+cJSON *archive_metadata_json_set_changed(cJSON *origin, const char *changed) {
+    char *ts = get_valid_time_string(changed);
+    if (ts == NULL)
         return NULL;
-    }
 
-    return tag_json;
+    cJSON *ret = __archive_metadata_json_add_string(origin, "changed", ts);
+    free(ts);
+
+    return ret;
+}
+
+/**
+ *
+ */
+cJSON *archive_metadata_json_set_owner(cJSON *origin, const char *name) {
+    return __archive_metadata_json_add_string(origin, "owner", name);
+}
+
+/**
+ *
+ */
+cJSON *archive_metadata_json_get_participants(cJSON *origin) {
+    return __archive_metadata_json_get_array(origin, "participants");
+}
+
+/**
+ *
+ */
+cJSON *archive_metadata_json_add_participant(cJSON *participants, const char *name) {
+    return __archive_metadata_json_add_string_to_array(participants, name);
 }
 
 #endif //ASSETS_ARCHIVE_METADATA_JSON

@@ -65,7 +65,12 @@ void usage_message(int argc, char *argv[]) {
     printf("\n");
     printf("Available commands:\n");
     printf("    get <hash>\n");
-    printf("    add-origin <hash> <name> [-tags [tags,...]]\n");
+    printf("    add-origin <hash> <name> \\\n");
+    printf("         [-tags [<tag>,...]] \\\n");
+    printf("         [-created <yyyy-mm-ss hh:mm:ss>] \\\n");
+    printf("         [-changed <yyyy-mm-ss hh:mm:ss>] \\\n");
+    printf("         [-owner <name>] \\\n");
+    printf("         [-participants [<name>,...]]\n");
     printf("\n");
     printf("Available options:\n");
     printf("    -config: File containing application configuration.\n");
@@ -162,14 +167,58 @@ void command_add_origin(int argi, int argc, char *argv[]) {
                     fail(EX_DATAERR, "Failed to get/create tags");
 
                 for (i++; i < argc; i++) {
-                    if (argv[i][0] == '-')
+                    if (argv[i][0] == '-') {
+                        i--;
                         break; //next option
+                    }
                     else if (get_command(argv[i]) != NULL)
                         goto end; //next command
                     archive_metadata_json_add_tag(tags, argv[i]);
                 }
             }
 
+        } else if (is_equal("-created", argv[i])) {
+
+            if (++i < argc) {
+                if (origin != NULL) {
+                    archive_metadata_json_set_created(origin, argv[i]);
+                }
+            }
+
+        } else if (is_equal("-changed", argv[i])) {
+
+            if (++i < argc) {
+                if (origin != NULL) {
+                    archive_metadata_json_set_changed(origin, argv[i]);
+                }
+            }
+
+        } else if (is_equal("-owner", argv[i])) {
+
+            if (++i < argc) {
+                if (origin != NULL) {
+                    archive_metadata_json_set_owner(origin, argv[i]);
+                }
+            }
+
+        } else if (is_equal("-participants", argv[i])) {
+
+            if (origin != NULL) {
+
+                cJSON *participants = archive_metadata_json_get_participants(origin);
+                if (participants == NULL)
+                    fail(EX_DATAERR, "Failed to get/create participants");
+
+                for (i++; i < argc; i++) {
+                    if (argv[i][0] == '-') {
+                        i--;
+                        break; //next option
+                    }
+                    else if (get_command(argv[i]) != NULL)
+                        goto end; //next command
+                    archive_metadata_json_add_participant(participants, argv[i]);
+                }
+            }
         }
     }
 
