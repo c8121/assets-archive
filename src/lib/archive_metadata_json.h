@@ -128,6 +128,8 @@ int archive_metadata_json_write(cJSON *metadata_json, char *file_name) {
 cJSON *archive_metadata_json_open(char *hash) {
 
     char *file_name = archive_metadata_json_get_path(hash);
+    if (file_name == NULL)
+        return NULL;
 
     cJSON *metadata_json = archive_metadata_json_load(file_name);
     if (metadata_json == NULL)
