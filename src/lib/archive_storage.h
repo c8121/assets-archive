@@ -206,6 +206,11 @@ char *archive_storage_get_path_with_suffix(char *hash, char *suffix, int suffix_
 
     __archive_storage_init();
 
+    if (strnlen(hash, 255) <= SPLIT_HASH_AT) {
+        fprintf(stderr, "Invalid hash length\n");
+        return NULL;
+    }
+
     struct char_buffer *cb = NULL;
 
     char *period_name = archive_storage_time_period_name(time(NULL));
