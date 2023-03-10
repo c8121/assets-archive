@@ -20,9 +20,9 @@
 #ifndef ASSETS_ARCHIVE_METADATA_JSON
 #define ASSETS_ARCHIVE_METADATA_JSON
 
-#ifndef cJSON__h
-
 #include <stdio.h>
+
+#ifndef cJSON__h
 
 #include "../3rd/cjson/cJSON.h"
 #include "../3rd/cjson/cJSON.c"
