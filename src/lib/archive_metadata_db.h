@@ -43,11 +43,9 @@ unsigned long archive_metadata_db_get_hash_id(const char *category);
 
 unsigned long archive_metadata_db_get_category_id(const char *category);
 
-unsigned long archive_metadata_db_get_owner_id(const char *owner);
+unsigned long archive_metadata_db_get_person_id(const char *owner);
 
 unsigned long archive_metadata_db_get_tag_id(const char *tag);
-
-unsigned long archive_metadata_db_get_participant_id(const char *participant);
 
 /**
  * @return 1 on success, 0 otherwise
@@ -70,7 +68,7 @@ int archive_metadata_db_add(const char *hash, cJSON *origin) {
     unsigned long category_id = archive_metadata_db_get_category_id(category);
 
     char *owner = archive_metadata_json_get_owner(origin);
-    unsigned long owner_id = archive_metadata_db_get_owner_id(owner);
+    unsigned long owner_id = !is_null_or_empty(owner) ? archive_metadata_db_get_person_id(owner) : -1;
 
     printf("%li: Name: '%s', Category: '%s' (%li), Owner: '%s' (%li), CR='%s', CH='%s'\n",
            hash_id,
@@ -92,14 +90,12 @@ int archive_metadata_db_add(const char *hash, cJSON *origin) {
     unsigned long participant_id;
     cJSON_ArrayForEach(participant, participants) {
         if (!is_null_or_empty(participant->valuestring)) {
-            participant_id = archive_metadata_db_get_participant_id(participant->valuestring);
+            participant_id = archive_metadata_db_get_person_id(participant->valuestring);
             printf(" - participant: '%s' (%li)\n", participant->valuestring, participant_id);
         }
     }
 
-    archive_metadata_db_disconnect();
-
-    return 0;
+    return 1;
 }
 
 

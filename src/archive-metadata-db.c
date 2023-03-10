@@ -101,6 +101,7 @@ int main(int argc, char *argv[]) {
 
     cJSON *origin;
     cJSON_ArrayForEach(origin, origins) {
+        printf("Add meta data for %s\n", hash);
         if (!archive_metadata_db_add(hash, origin)) {
             fail(EX_DATAERR, "Failed to add origin");
         }

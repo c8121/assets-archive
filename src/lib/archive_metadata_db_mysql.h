@@ -33,50 +33,168 @@ void *mysql = NULL;
 const char *mysql_select_hash_id_sql = "SELECT ID FROM HASH WHERE HASH=?;";
 MYSQL_STMT *mysql_select_hash_id_stmt = NULL;
 
+const char *mysql_select_hash_add_sql = "INSERT INTO HASH(HASH) VALUES(?);";
+MYSQL_STMT *mysql_select_hash_add_stmt = NULL;
+
+const char *mysql_select_person_id_sql = "SELECT ID FROM PERSON WHERE NAME=?;";
+MYSQL_STMT *mysql_select_person_id_stmt = NULL;
+
+const char *mysql_select_person_add_sql = "INSERT INTO PERSON(NAME) VALUES(?);";
+MYSQL_STMT *mysql_select_person_add_stmt = NULL;
+
+const char *mysql_select_tag_id_sql = "SELECT ID FROM TAG WHERE TAG=?;";
+MYSQL_STMT *mysql_select_tag_id_stmt = NULL;
+
+const char *mysql_select_tag_add_sql = "INSERT INTO TAG(TAG) VALUES(?);";
+MYSQL_STMT *mysql_select_tag_add_stmt = NULL;
+
 
 /**
- *
+ * @return 1 on success, 0 otherwise
  */
-MYSQL_STMT *mysql_prepare_stmt(MYSQL_STMT *stmt, const char *sql) {
+int __mysql_prepare_stmt(MYSQL_STMT **stmt, const char *sql) {
 
     if (mysql == NULL) {
         fprintf(stderr, "%s", "Not connected\n");
-        return NULL;
+        return 0;
     }
 
-    if (stmt == NULL) {
-        stmt = mysql_stmt_init(mysql);
-        if (mysql_stmt_prepare(stmt, sql, strlen(sql)) != 0) {
+    if (*stmt == NULL) {
+        *stmt = mysql_stmt_init(mysql);
+        if (mysql_stmt_prepare(*stmt, sql, strlen(sql)) != 0) {
             fprintf(stderr, "%s\n", mysql_error(mysql));
-            return NULL;
+            return 0;
         }
     }
 
-    return stmt;
+    return 1;
 }
 
 /**
  *
  */
-MYSQL_BIND *mysql_create_string_param(char *s, unsigned long l) {
+MYSQL_BIND *__mysql_create_bind(enum enum_field_types type, void *value) {
 
-    MYSQL_BIND *param = malloc(sizeof(MYSQL_BIND));
-    param[0].buffer_type = MYSQL_TYPE_STRING;
-    param[0].buffer = s;
-    param[0].length = &l;
-    param[0].is_null = 0;
+    MYSQL_BIND *bind = malloc(sizeof(MYSQL_BIND));
+    memset(bind, 0, sizeof(MYSQL_BIND));
+    bind->buffer_type = type;
+    bind->buffer = value;
+    bind->is_null = 0;
 
-    return param;
+    return bind;
+}
+
+
+/**
+ * @return -1 on fail, 0 on no data found, 1 on success
+ */
+int __mysql_fetch_result(MYSQL_STMT *stmt, MYSQL_BIND *param, MYSQL_BIND *result) {
+
+    if (mysql_stmt_bind_param(stmt, param) != 0) {
+        fprintf(stderr, "%s\n", mysql_error(mysql));
+        return -1;
+    }
+
+    if (mysql_stmt_execute(stmt) != 0) {
+        fprintf(stderr, "%s\n", mysql_error(mysql));
+        return -1;
+    }
+
+    if (mysql_stmt_bind_result(stmt, result) != 0) {
+        fprintf(stderr, "%s\n", mysql_error(mysql));
+        return -1;
+    }
+
+    if (mysql_stmt_store_result(stmt) != 0) {
+        fprintf(stderr, "%s\n", mysql_error(mysql));
+        return -1;
+    }
+
+    int ret = 1;
+    int s = mysql_stmt_fetch(stmt);
+    if (s == MYSQL_NO_DATA) {
+        ret = 0;
+    } else if (s != 0) {
+        fprintf(stderr, "mysql_stmt_fetch = %i, %s\n", s, mysql_error(mysql));
+    }
+
+    return ret;
+}
+
+/**
+ * @return -1 on fail, insert id otherwise
+ */
+unsigned long __mysql_execute(MYSQL_STMT *stmt, MYSQL_BIND *param) {
+
+    if (mysql_stmt_bind_param(stmt, param) != 0) {
+        fprintf(stderr, "%s\n", mysql_error(mysql));
+        return -1;
+    }
+
+    if (mysql_stmt_execute(stmt) != 0) {
+        fprintf(stderr, "%s\n", mysql_error(mysql));
+        return -1;
+    }
+
+    return mysql_stmt_insert_id(stmt);
+}
+
+/**
+ * @return id on success, -1 on fail
+ */
+unsigned long __mysql_add_name(const char *name, int len, MYSQL_STMT **stmt, const char *sql) {
+
+    if (!__mysql_prepare_stmt(stmt, sql))
+        fail(EX_IOERR, "Failed to prepare statement");
+
+    MYSQL_BIND *p = __mysql_create_bind(MYSQL_TYPE_STRING, (void *) name);
+    p->buffer_length = len;
+
+    unsigned long id = __mysql_execute(*stmt, p);
+    if (id == -1)
+        fail(EX_IOERR, "Failed to execute statement");
+
+    mysql_stmt_free_result(*stmt);
+    free(p);
+
+    return id;
+}
+
+/**
+ * @return id if found, -1 on error, 0 if no data found
+ */
+unsigned long __mysql_get_name_id(const char *name, int len, MYSQL_STMT **stmt, const char *sql) {
+
+    if (!__mysql_prepare_stmt(stmt, sql))
+        fail(EX_IOERR, "Failed to prepare hash statement");
+
+    MYSQL_BIND *p = __mysql_create_bind(MYSQL_TYPE_STRING, (void *) name);
+    p->buffer_length = len;
+
+    unsigned long id = 0;
+    MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
+
+    int ret = __mysql_fetch_result(*stmt, p, r);
+    if (ret == -1)
+        fail(EX_IOERR, "Failed to execute hash statement");
+
+    mysql_stmt_free_result(*stmt);
+    free(r);
+    free(p);
+
+    if (ret == 0)
+        return 0;
+
+    return id;
 }
 
 /**
  *
  */
-MYSQL_STMT *mysql_close_stmt(MYSQL_STMT *stmt) {
-    if (stmt != NULL)
-        mysql_stmt_close(stmt);
-    stmt = NULL;
-    return NULL;
+void __mysql_close_stmt(MYSQL_STMT **stmt) {
+    if (*stmt != NULL)
+        mysql_stmt_close(*stmt);
+    *stmt = NULL;
 }
 
 /**
@@ -106,37 +224,53 @@ int archive_metadata_db_connect(const char *host, const char *user, const char *
  */
 void archive_metadata_db_disconnect() {
 
-    mysql_select_hash_id_stmt = mysql_close_stmt(mysql_select_hash_id_stmt);
+    __mysql_close_stmt(&mysql_select_hash_id_stmt);
+    __mysql_close_stmt(&mysql_select_hash_add_stmt);
+    __mysql_close_stmt(&mysql_select_person_id_stmt);
+    __mysql_close_stmt(&mysql_select_person_add_stmt);
+    __mysql_close_stmt(&mysql_select_tag_id_stmt);
+    __mysql_close_stmt(&mysql_select_tag_add_stmt);
 
+    mysql_close(mysql);
 }
+
 
 /**
  *
  */
 unsigned long archive_metadata_db_get_hash_id(const char *hash) {
 
-    if ((mysql_select_hash_id_stmt = mysql_prepare_stmt(mysql_select_hash_id_stmt, mysql_select_hash_id_sql)) == NULL)
-        fail(EX_IOERR, "Failed to prepare hash statement");
+    if (is_null_or_empty(hash))
+        fail(EX_DATAERR, "Owner name cannot be null or empty");
 
-    MYSQL_BIND *p = mysql_create_string_param((char *) hash, strnlen(hash, 512));
+    int len = strnlen(hash, 512);
 
-    if (mysql_stmt_bind_param(mysql_select_hash_id_stmt, p) != 0) {
-        fprintf(stderr, "%s\n", mysql_error(mysql));
-        return 0;
-    }
+    unsigned long id = __mysql_get_name_id(hash, len,
+                                           &mysql_select_hash_id_stmt, mysql_select_hash_id_sql);
+    if (id == 0)
+        id = __mysql_add_name(hash, len,
+                              &mysql_select_hash_add_stmt, mysql_select_hash_add_sql);
 
-    printf("QUERY RESULT...\n");
-
-    free(p);
-
-    return 0;
+    return id;
 }
 
 /**
  *
  */
-unsigned long archive_metadata_db_get_owner_id(const char *owner) {
-    return -1;
+unsigned long archive_metadata_db_get_person_id(const char *owner) {
+
+    if (is_null_or_empty(owner))
+        fail(EX_DATAERR, "Owner name cannot be null or empty");
+
+    int len = strnlen(owner, 512);
+
+    unsigned long id = __mysql_get_name_id(owner, len,
+                                           &mysql_select_person_id_stmt, mysql_select_person_id_sql);
+    if (id == 0)
+        id = __mysql_add_name(owner, len,
+                              &mysql_select_person_add_stmt, mysql_select_person_add_sql);
+
+    return id;
 }
 
 /**
@@ -150,14 +284,19 @@ unsigned long archive_metadata_db_get_category_id(const char *category) {
  *
  */
 unsigned long archive_metadata_db_get_tag_id(const char *tag) {
-    return -3;
-}
 
-/**
- *
- */
-unsigned long archive_metadata_db_get_participant_id(const char *participant) {
-    return -4;
+    if (is_null_or_empty(tag))
+        fail(EX_DATAERR, "Tag name cannot be null or empty");
+
+    int len = strnlen(tag, 512);
+
+    unsigned long id = __mysql_get_name_id(tag, len,
+                                           &mysql_select_tag_id_stmt, mysql_select_tag_id_sql);
+    if (id == 0)
+        id = __mysql_add_name(tag, len,
+                              &mysql_select_tag_add_stmt, mysql_select_tag_add_sql);
+
+    return id;
 }
 
 #endif //ASSETS_ARCHIVE_METADATA_DB_MYSQL
