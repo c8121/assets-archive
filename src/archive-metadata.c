@@ -81,7 +81,7 @@ void usage_message(int argc, char *argv[]) {
 /**
  *
  */
-void *get_command(char *s) {
+void *command_get_function(char *s) {
 
     for (int i = 0; i < NUM_COMMANDS; i++) {
         if (is_equal(commands[i].name, s))
@@ -171,7 +171,7 @@ void command_add_origin(int argi, int argc, char *argv[]) {
                     if (argv[i][0] == '-') {
                         i--;
                         break; //next option
-                    } else if (get_command(argv[i]) != NULL)
+                    } else if (command_get_function(argv[i]) != NULL)
                         goto end; //next command
                     archive_metadata_json_add_tag(tags, argv[i]);
                 }
@@ -221,7 +221,7 @@ void command_add_origin(int argi, int argc, char *argv[]) {
                     if (argv[i][0] == '-') {
                         i--;
                         break; //next option
-                    } else if (get_command(argv[i]) != NULL)
+                    } else if (command_get_function(argv[i]) != NULL)
                         goto end; //next command
                     archive_metadata_json_add_participant(participants, argv[i]);
                 }
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
     // Execute commands
     void (*f)(int, int, char *[]) = NULL;
     for (int i = 1; i < argc; i++) {
-        f = get_command(argv[i]);
+        f = command_get_function(argv[i]);
         if (f != NULL) {
             f(i, argc, argv);
             f = NULL;
