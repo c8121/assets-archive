@@ -97,6 +97,19 @@ cJSON *__archive_metadata_json_add_string_to_array(cJSON *array, const char *s) 
     return s_json;
 }
 
+/**
+ *
+ */
+char *__archive_metadata_json_get_string(cJSON *container, const char *name) {
+    cJSON *json = cJSON_GetObjectItem(container, name);
+    if (json == NULL)
+        return NULL;
+    return json->valuestring;
+}
+
+/**
+ *
+ */
 cJSON *__archive_metadata_json_add_string(cJSON *container, const char *name, const char *s) {
 
     cJSON *s_json = cJSON_CreateString(s);
@@ -222,6 +235,20 @@ void archive_metadata_json_close(cJSON *metadata_json, char *hash) {
     }
 }
 
+cJSON *archive_metadata_json_get_origins(cJSON *metadata_json) {
+
+    cJSON *origins = cJSON_GetObjectItem(metadata_json, "origins");
+    if (origins == NULL)
+        return NULL;
+
+    if (!cJSON_IsArray(origins)) {
+        fprintf(stderr, "Invalid JSON (origins not an array)\n");
+        return NULL;
+    }
+
+    return origins;
+}
+
 /**
  *
  */
@@ -277,6 +304,13 @@ cJSON *archive_metadata_json_get_origin(cJSON *metadata_json, const char *name) 
 /**
  *
  */
+char *archive_metadata_json_get_origin_name(cJSON *origin) {
+    return __archive_metadata_json_get_string(origin, "name");
+}
+
+/**
+ *
+ */
 cJSON *archive_metadata_json_get_tags(cJSON *origin) {
     return __archive_metadata_json_get_array(origin, "tags");
 }
@@ -305,6 +339,13 @@ cJSON *archive_metadata_json_set_created(cJSON *origin, const char *created) {
 /**
  *
  */
+char *archive_metadata_json_get_created(cJSON *origin) {
+    return __archive_metadata_json_get_string(origin, "created");
+}
+
+/**
+ *
+ */
 cJSON *archive_metadata_json_set_changed(cJSON *origin, const char *changed) {
     char *ts = get_valid_time_string(changed);
     if (ts == NULL)
@@ -319,6 +360,13 @@ cJSON *archive_metadata_json_set_changed(cJSON *origin, const char *changed) {
 /**
  *
  */
+char *archive_metadata_json_get_changed(cJSON *origin) {
+    return __archive_metadata_json_get_string(origin, "changed");
+}
+
+/**
+ *
+ */
 cJSON *archive_metadata_json_set_category(cJSON *origin, const char *name) {
     return __archive_metadata_json_add_string(origin, "category", name);
 }
@@ -326,8 +374,22 @@ cJSON *archive_metadata_json_set_category(cJSON *origin, const char *name) {
 /**
  *
  */
+char *archive_metadata_json_get_category(cJSON *origin) {
+    return __archive_metadata_json_get_string(origin, "category");
+}
+
+/**
+ *
+ */
 cJSON *archive_metadata_json_set_owner(cJSON *origin, const char *name) {
     return __archive_metadata_json_add_string(origin, "owner", name);
+}
+
+/**
+ *
+ */
+char *archive_metadata_json_get_owner(cJSON *origin) {
+    return __archive_metadata_json_get_string(origin, "owner");
 }
 
 /**

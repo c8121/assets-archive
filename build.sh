@@ -18,4 +18,5 @@ fi
 cd "$BASE"
 gcc -Wall -o "$binDir/archive" "$sourceDir/archive.c" -lbsd
 gcc -Wall -o "$binDir/archive-metadata" "$sourceDir/archive-metadata.c" -lbsd
+gcc -Wall -o "$binDir/archive-metadata-db" "$sourceDir/archive-metadata-db.c" -lbsd -lmysqlclient
 gcc -Wall -o "$binDir/archive-export" "$sourceDir/archive-export.c" -lbsd

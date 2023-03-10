@@ -23,7 +23,7 @@
 /**
  * Print message to stderr and exit with fiven status
  */
-void fail(int status, char *message) {
+void fail(int status, const char *message) {
     fprintf(stderr, "%s\n", message);
     exit(status);
 }
