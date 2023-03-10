@@ -319,6 +319,13 @@ cJSON *archive_metadata_json_set_changed(cJSON *origin, const char *changed) {
 /**
  *
  */
+cJSON *archive_metadata_json_set_category(cJSON *origin, const char *name) {
+    return __archive_metadata_json_add_string(origin, "category", name);
+}
+
+/**
+ *
+ */
 cJSON *archive_metadata_json_set_owner(cJSON *origin, const char *name) {
     return __archive_metadata_json_add_string(origin, "owner", name);
 }

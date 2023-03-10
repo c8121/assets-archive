@@ -69,6 +69,7 @@ void usage_message(int argc, char *argv[]) {
     printf("         [-tags [<tag>,...]] \\\n");
     printf("         [-created <yyyy-mm-ss hh:mm:ss>] \\\n");
     printf("         [-changed <yyyy-mm-ss hh:mm:ss>] \\\n");
+    printf("         [-category <path/name>] \\\n");
     printf("         [-owner <name>] \\\n");
     printf("         [-participants [<name>,...]]\n");
     printf("\n");
@@ -189,6 +190,14 @@ void command_add_origin(int argi, int argc, char *argv[]) {
             if (++i < argc) {
                 if (origin != NULL) {
                     archive_metadata_json_set_changed(origin, argv[i]);
+                }
+            }
+
+        } else if (is_equal("-category", argv[i])) {
+
+            if (++i < argc) {
+                if (origin != NULL) {
+                    archive_metadata_json_set_category(origin, argv[i]);
                 }
             }
 
