@@ -42,7 +42,7 @@ void command_get(int argi, int argc, char *argv[]);
 void command_add_origin(int argi, int argc, char *argv[]);
 
 struct command commands[] = {
-        {"get", &command_get},
+        {"get",        &command_get},
         {"add-origin", &command_add_origin}
 };
 #define NUM_COMMANDS 2
@@ -170,8 +170,7 @@ void command_add_origin(int argi, int argc, char *argv[]) {
                     if (argv[i][0] == '-') {
                         i--;
                         break; //next option
-                    }
-                    else if (get_command(argv[i]) != NULL)
+                    } else if (get_command(argv[i]) != NULL)
                         goto end; //next command
                     archive_metadata_json_add_tag(tags, argv[i]);
                 }
@@ -213,8 +212,7 @@ void command_add_origin(int argi, int argc, char *argv[]) {
                     if (argv[i][0] == '-') {
                         i--;
                         break; //next option
-                    }
-                    else if (get_command(argv[i]) != NULL)
+                    } else if (get_command(argv[i]) != NULL)
                         goto end; //next command
                     archive_metadata_json_add_participant(participants, argv[i]);
                 }
