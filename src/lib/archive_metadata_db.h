@@ -32,6 +32,8 @@
 #include "char_util.h"
 #include "archive_metadata_json.h"
 
+#define CATEGORY_SEPARATOR '/'
+
 /**
  * @return 1 on success, 0 otherwise
  */

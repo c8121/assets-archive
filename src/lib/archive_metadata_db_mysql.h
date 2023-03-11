@@ -48,6 +48,12 @@ MYSQL_STMT *mysql_select_tag_id_stmt = NULL;
 const char *mysql_select_tag_add_sql = "INSERT INTO TAG(TAG) VALUES(?);";
 MYSQL_STMT *mysql_select_tag_add_stmt = NULL;
 
+const char *mysql_select_category_id_sql = "SELECT ID FROM CATEGORY WHERE PARENT=? AND NAME=?;";
+MYSQL_STMT *mysql_select_category_id_stmt = NULL;
+
+const char *mysql_select_category_add_sql = "INSERT INTO CATEGORY(PARENT, NAME) VALUES(?, ?);";
+MYSQL_STMT *mysql_select_category_add_stmt = NULL;
+
 
 /**
  * @return 1 on success, 0 otherwise
@@ -80,6 +86,21 @@ MYSQL_BIND *__mysql_create_bind(enum enum_field_types type, void *value) {
     bind->buffer_type = type;
     bind->buffer = value;
     bind->is_null = 0;
+
+    return bind;
+}
+
+/**
+ *
+ */
+MYSQL_BIND *__mysql_create_binds(int count) {
+
+    MYSQL_BIND *bind = malloc(sizeof(MYSQL_BIND) * count);
+    memset(bind, 0, sizeof(MYSQL_BIND) * count);
+
+    for (int i = 0; i < count; i++) {
+        bind[i].is_null = 0;
+    }
 
     return bind;
 }
@@ -166,7 +187,7 @@ unsigned long __mysql_add_name(const char *name, int len, MYSQL_STMT **stmt, con
 unsigned long __mysql_get_name_id(const char *name, int len, MYSQL_STMT **stmt, const char *sql) {
 
     if (!__mysql_prepare_stmt(stmt, sql))
-        fail(EX_IOERR, "Failed to prepare hash statement");
+        fail(EX_IOERR, "Failed to prepare statement");
 
     MYSQL_BIND *p = __mysql_create_bind(MYSQL_TYPE_STRING, (void *) name);
     p->buffer_length = len;
@@ -176,7 +197,68 @@ unsigned long __mysql_get_name_id(const char *name, int len, MYSQL_STMT **stmt, 
 
     int ret = __mysql_fetch_result(*stmt, p, r);
     if (ret == -1)
-        fail(EX_IOERR, "Failed to execute hash statement");
+        fail(EX_IOERR, "Failed to execute statement");
+
+    mysql_stmt_free_result(*stmt);
+    free(r);
+    free(p);
+
+    if (ret == 0)
+        return 0;
+
+    return id;
+}
+
+/**
+ * @return id on success, -1 on fail
+ */
+unsigned long __mysql_add_tree_item(unsigned long parent, const char *name, int len,
+                                    MYSQL_STMT **stmt, const char *sql) {
+
+    if (!__mysql_prepare_stmt(stmt, sql))
+        fail(EX_IOERR, "Failed to prepare statement");
+
+    printf("ADD: NAME=%s, PARENT=%li\n", name, parent);
+
+    MYSQL_BIND *p = __mysql_create_binds(2);
+    p[0].buffer_type = MYSQL_TYPE_LONG;
+    p[0].buffer = &parent;
+    p[1].buffer_type = MYSQL_TYPE_STRING;
+    p[1].buffer = (char *) name;
+    p[1].buffer_length = len;
+
+    unsigned long id = __mysql_execute(*stmt, p);
+    if (id == -1)
+        fail(EX_IOERR, "Failed to execute statement");
+
+    mysql_stmt_free_result(*stmt);
+    free(p);
+
+    return id;
+}
+
+/**
+ * @return id if found, -1 on error, 0 if no data found
+ */
+unsigned long __mysql_get_tree_item_id(unsigned long parent, const char *name, int len,
+                                       MYSQL_STMT **stmt, const char *sql) {
+
+    if (!__mysql_prepare_stmt(stmt, sql))
+        fail(EX_IOERR, "Failed to prepare statement");
+
+    MYSQL_BIND *p = __mysql_create_binds(2);
+    p[0].buffer_type = MYSQL_TYPE_LONG;
+    p[0].buffer = &parent;
+    p[1].buffer_type = MYSQL_TYPE_STRING;
+    p[1].buffer = (char *) name;
+    p[1].buffer_length = len;
+
+    unsigned long id = 0;
+    MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
+
+    int ret = __mysql_fetch_result(*stmt, p, r);
+    if (ret == -1)
+        fail(EX_IOERR, "Failed to execute statement");
 
     mysql_stmt_free_result(*stmt);
     free(r);
@@ -277,7 +359,34 @@ unsigned long archive_metadata_db_get_person_id(const char *owner) {
  *
  */
 unsigned long archive_metadata_db_get_category_id(const char *category) {
-    return -2;
+
+    unsigned long id = 0;
+    unsigned long parent_id = 0;
+
+    char *tmp = str_copy(category, strnlen(category, 1024));
+    char *start = tmp;
+    if (start[0] == CATEGORY_SEPARATOR)
+        start++;
+    char *last = start + strlen(start);
+    char *sep;
+    while (start < last) {
+        sep = strchr(start, CATEGORY_SEPARATOR);
+        if (sep == NULL)
+            sep = start + strlen(start) + 1;
+        *sep = '\0';
+
+        id = __mysql_get_tree_item_id(parent_id, start, strlen(start),
+                                      &mysql_select_category_id_stmt, mysql_select_category_id_sql);
+        if (id == 0)
+            id = __mysql_add_tree_item(parent_id, start, strlen(start),
+                                       &mysql_select_category_add_stmt, mysql_select_category_add_sql);
+
+        parent_id = id;
+        start = sep + 1;
+    }
+
+    free(tmp);
+    return id;
 }
 
 /**
