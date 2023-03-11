@@ -218,8 +218,6 @@ unsigned long __mysql_add_tree_item(unsigned long parent, const char *name, int 
     if (!__mysql_prepare_stmt(stmt, sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    printf("ADD: NAME=%s, PARENT=%li\n", name, parent);
-
     MYSQL_BIND *p = __mysql_create_binds(2);
     p[0].buffer_type = MYSQL_TYPE_LONG;
     p[0].buffer = &parent;
@@ -363,7 +361,7 @@ unsigned long archive_metadata_db_get_category_id(const char *category) {
     unsigned long id = 0;
     unsigned long parent_id = 0;
 
-    char *tmp = str_copy(category, strnlen(category, 1024));
+    char *tmp = str_copy(category, strnlen(category, 1024) + 1);
     char *start = tmp;
     if (start[0] == CATEGORY_SEPARATOR)
         start++;
