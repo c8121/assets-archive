@@ -49,6 +49,14 @@ unsigned long archive_metadata_db_get_person_id(const char *owner);
 
 unsigned long archive_metadata_db_get_tag_id(const char *tag);
 
+unsigned long archive_metadata_db_get_origin_id(unsigned long hash_id, const char *name,
+                                                unsigned long owner_id, unsigned long category_id,
+                                                const char *created, const char *changed);
+
+unsigned long archive_metadata_db_assign_participant(unsigned long origin_id, unsigned long person_id);
+
+unsigned long archive_metadata_db_assign_tag(unsigned long origin_id, unsigned long tag_id);
+
 /**
  * @return 1 on success, 0 otherwise
  */
@@ -72,10 +80,9 @@ int archive_metadata_db_add(const char *hash, cJSON *origin) {
     char *owner = archive_metadata_json_get_owner(origin);
     unsigned long owner_id = !is_null_or_empty(owner) ? archive_metadata_db_get_person_id(owner) : -1;
 
-    printf("%li: Name: '%s', Category: '%s' (%li), Owner: '%s' (%li), CR='%s', CH='%s'\n",
-           hash_id,
-           name, category, category_id, owner, owner_id,
-           changed, created);
+    unsigned long origin_id = archive_metadata_db_get_origin_id(hash_id, name, owner_id, category_id,
+                                                                created, changed
+    );
 
     cJSON *tags = archive_metadata_json_get_tags(origin);
     cJSON *tag;
@@ -83,7 +90,7 @@ int archive_metadata_db_add(const char *hash, cJSON *origin) {
     cJSON_ArrayForEach(tag, tags) {
         if (!is_null_or_empty(tag->valuestring)) {
             tag_id = archive_metadata_db_get_tag_id(tag->valuestring);
-            printf(" - tag: '%s' (%li)\n", tag->valuestring, tag_id);
+            archive_metadata_db_assign_tag(origin_id, tag_id);
         }
     }
 
@@ -93,7 +100,7 @@ int archive_metadata_db_add(const char *hash, cJSON *origin) {
     cJSON_ArrayForEach(participant, participants) {
         if (!is_null_or_empty(participant->valuestring)) {
             participant_id = archive_metadata_db_get_person_id(participant->valuestring);
-            printf(" - participant: '%s' (%li)\n", participant->valuestring, participant_id);
+            archive_metadata_db_assign_participant(origin_id, participant_id);
         }
     }
 
