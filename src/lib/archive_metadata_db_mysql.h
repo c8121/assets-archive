@@ -30,48 +30,87 @@
 
 void *mysql = NULL;
 
-const char *mysql_select_hash_id_sql = "SELECT ID FROM HASH WHERE HASH=?;";
-MYSQL_STMT *mysql_select_hash_id_stmt = NULL;
 
-const char *mysql_insert_hash_sql = "INSERT INTO HASH(HASH) VALUES(?);";
-MYSQL_STMT *mysql_insert_hash_stmt = NULL;
+struct __mysql_query {
+    const char *get_sql;
+    MYSQL_STMT *get_stmt;
+    const char *add_sql;
+    MYSQL_STMT *add_stmt;
+};
 
-const char *mysql_select_person_id_sql = "SELECT ID FROM PERSON WHERE NAME=?;";
-MYSQL_STMT *mysql_select_person_id_stmt = NULL;
+struct __mysql_query *__mysql_hash = NULL;
+struct __mysql_query *__mysql_person = NULL;
+struct __mysql_query *__mysql_tag = NULL;
+struct __mysql_query *__mysql_category = NULL;
+struct __mysql_query *__mysql_origin = NULL;
+struct __mysql_query *__mysql_participant_mapping = NULL;
+struct __mysql_query *__mysql_tag_mapping = NULL;
 
-const char *mysql_insert_person_sql = "INSERT INTO PERSON(NAME) VALUES(?);";
-MYSQL_STMT *mysql_insert_person_stmt = NULL;
+/**
+ *
+ */
+struct __mysql_query *__mysql_create_query(const char *get_sql, const char *add_sql) {
+    struct __mysql_query *query = malloc(sizeof(struct __mysql_query));
+    query->get_sql = str_copy(get_sql, strlen(get_sql));
+    query->get_stmt = NULL;
+    query->add_sql = str_copy(add_sql, strlen(add_sql));
+    query->add_stmt = NULL;
+    return query;
+}
 
-const char *mysql_select_tag_id_sql = "SELECT ID FROM TAG WHERE TAG=?;";
-MYSQL_STMT *mysql_select_tag_id_stmt = NULL;
+/**
+ *
+ */
+void __mysql_create_queries() {
 
-const char *mysql_insert_tag_sql = "INSERT INTO TAG(TAG) VALUES(?);";
-MYSQL_STMT *mysql_insert_tag_stmt = NULL;
+    __mysql_hash = __mysql_create_query(
+            "SELECT ID FROM HASH WHERE HASH=?;",
+            "INSERT INTO HASH(HASH) VALUES(?);"
+    );
 
-const char *mysql_select_category_id_sql = "SELECT ID FROM CATEGORY WHERE PARENT=? AND NAME=?;";
-MYSQL_STMT *mysql_select_category_id_stmt = NULL;
+    __mysql_person = __mysql_create_query(
+            "SELECT ID FROM PERSON WHERE NAME=?;",
+            "INSERT INTO PERSON(NAME) VALUES(?);"
+    );
 
-const char *mysql_insert_category_sql = "INSERT INTO CATEGORY(PARENT, NAME) VALUES(?, ?);";
-MYSQL_STMT *mysql_insert_category_stmt = NULL;
+    __mysql_tag = __mysql_create_query(
+            "SELECT ID FROM TAG WHERE TAG=?;",
+            "INSERT INTO TAG(TAG) VALUES(?);"
+    );
 
-const char *mysql_select_origin_id_sql = "SELECT ID FROM ORIGIN WHERE HASH=? AND NAME=?;";
-MYSQL_STMT *mysql_select_origin_id_stmt = NULL;
+    __mysql_category = __mysql_create_query(
+            "SELECT ID FROM CATEGORY WHERE PARENT=? AND NAME=?;",
+            "INSERT INTO CATEGORY(PARENT, NAME) VALUES(?, ?);"
+    );
 
-const char *mysql_insert_origin_sql = "INSERT INTO ORIGIN(HASH, NAME, OWNER, CATEGORY, CREATED, CHANGED) VALUES(?, ?, ?, ?, ?, ?);";
-MYSQL_STMT *mysql_insert_origin_stmt = NULL;
+    __mysql_origin = __mysql_create_query(
+            "SELECT ID FROM ORIGIN WHERE HASH=? AND NAME=?;",
+            "INSERT INTO ORIGIN(HASH, NAME, OWNER, CATEGORY, CREATED, CHANGED) VALUES(?, ?, ?, ?, ?, ?);"
+    );
 
-const char *mysql_select_participant_mapping_id_sql = "SELECT ID FROM ORIGIN_PARTICIPANT WHERE ORIGIN=? AND PERSON=?;";
-MYSQL_STMT *mysql_select_participant_mapping_id_stmt = NULL;
+    __mysql_participant_mapping = __mysql_create_query(
+            "SELECT ID FROM ORIGIN_PARTICIPANT WHERE ORIGIN=? AND PERSON=?;",
+            "INSERT INTO ORIGIN_PARTICIPANT(ORIGIN, PERSON) VALUES(?, ?);"
+    );
 
-const char *mysql_insert_participant_mapping_sql = "INSERT INTO ORIGIN_PARTICIPANT(ORIGIN, PERSON) VALUES(?, ?);";
-MYSQL_STMT *mysql_insert_participant_mapping_stmt = NULL;
+    __mysql_tag_mapping = __mysql_create_query(
+            "SELECT ID FROM ORIGIN_TAG WHERE ORIGIN=? AND TAG=?;",
+            "INSERT INTO ORIGIN_TAG(ORIGIN, TAG) VALUES(?, ?);"
+    );
+}
 
-const char *mysql_select_tag_mapping_id_sql = "SELECT ID FROM ORIGIN_TAG WHERE ORIGIN=? AND TAG=?;";
-MYSQL_STMT *mysql_select_tag_mapping_id_stmt = NULL;
+/**
+ *
+ */
+void __mysql_close_query(struct __mysql_query *query) {
+    if (query->get_stmt != NULL)
+        mysql_stmt_close(query->get_stmt);
+    query->get_stmt = NULL;
 
-const char *mysql_insert_tag_mapping_sql = "INSERT INTO ORIGIN_TAG(ORIGIN, TAG) VALUES(?, ?);";
-MYSQL_STMT *mysql_insert_tag_mapping_stmt = NULL;
-
+    if (query->add_stmt != NULL)
+        mysql_stmt_close(query->add_stmt);
+    query->add_stmt = NULL;
+}
 
 /**
  * @return 1 on success, 0 otherwise
@@ -181,19 +220,19 @@ unsigned long __mysql_execute(MYSQL_STMT *stmt, MYSQL_BIND *param) {
 /**
  * @return id on success, -1 on fail
  */
-unsigned long __mysql_add_name(const char *name, int len, MYSQL_STMT **stmt, const char *sql) {
+unsigned long __mysql_add_name(const char *name, int len, struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(stmt, sql))
+    if (!__mysql_prepare_stmt(&query->add_stmt, query->add_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
     MYSQL_BIND *p = __mysql_create_bind(MYSQL_TYPE_STRING, (void *) name);
     p->buffer_length = len;
 
-    unsigned long id = __mysql_execute(*stmt, p);
+    unsigned long id = __mysql_execute(query->add_stmt, p);
     if (id == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
-    mysql_stmt_free_result(*stmt);
+    mysql_stmt_free_result(query->add_stmt);
     free(p);
 
     return id;
@@ -202,9 +241,9 @@ unsigned long __mysql_add_name(const char *name, int len, MYSQL_STMT **stmt, con
 /**
  * @return id if found, -1 on error, 0 if no data found
  */
-unsigned long __mysql_get_name_id(const char *name, int len, MYSQL_STMT **stmt, const char *sql) {
+unsigned long __mysql_get_name_id(const char *name, int len, struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(stmt, sql))
+    if (!__mysql_prepare_stmt(&query->get_stmt, query->get_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
     MYSQL_BIND *p = __mysql_create_bind(MYSQL_TYPE_STRING, (void *) name);
@@ -213,11 +252,11 @@ unsigned long __mysql_get_name_id(const char *name, int len, MYSQL_STMT **stmt, 
     unsigned long id = 0;
     MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
 
-    int ret = __mysql_fetch_result(*stmt, p, r);
+    int ret = __mysql_fetch_result(query->get_stmt, p, r);
     if (ret == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
-    mysql_stmt_free_result(*stmt);
+    mysql_stmt_free_result(query->get_stmt);
     free(r);
     free(p);
 
@@ -231,9 +270,9 @@ unsigned long __mysql_get_name_id(const char *name, int len, MYSQL_STMT **stmt, 
  * @return id on success, -1 on fail
  */
 unsigned long __mysql_add_tree_item(unsigned long parent, const char *name, int len,
-                                    MYSQL_STMT **stmt, const char *sql) {
+                                    struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(stmt, sql))
+    if (!__mysql_prepare_stmt(&query->add_stmt, query->add_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
     MYSQL_BIND *p = __mysql_create_binds(2);
@@ -243,11 +282,11 @@ unsigned long __mysql_add_tree_item(unsigned long parent, const char *name, int 
     p[1].buffer = (char *) name;
     p[1].buffer_length = len;
 
-    unsigned long id = __mysql_execute(*stmt, p);
+    unsigned long id = __mysql_execute(query->add_stmt, p);
     if (id == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
-    mysql_stmt_free_result(*stmt);
+    mysql_stmt_free_result(query->add_stmt);
     free(p);
 
     return id;
@@ -257,9 +296,9 @@ unsigned long __mysql_add_tree_item(unsigned long parent, const char *name, int 
  * @return id if found, -1 on error, 0 if no data found
  */
 unsigned long __mysql_get_tree_item_id(unsigned long parent, const char *name, int len,
-                                       MYSQL_STMT **stmt, const char *sql) {
+                                       struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(stmt, sql))
+    if (!__mysql_prepare_stmt(&query->get_stmt, query->get_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
     MYSQL_BIND *p = __mysql_create_binds(2);
@@ -272,11 +311,11 @@ unsigned long __mysql_get_tree_item_id(unsigned long parent, const char *name, i
     unsigned long id = 0;
     MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
 
-    int ret = __mysql_fetch_result(*stmt, p, r);
+    int ret = __mysql_fetch_result(query->get_stmt, p, r);
     if (ret == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
-    mysql_stmt_free_result(*stmt);
+    mysql_stmt_free_result(query->get_stmt);
     free(r);
     free(p);
 
@@ -293,7 +332,7 @@ unsigned long __mysql_add_origin(unsigned long hash_id, const char *name, int le
                                  unsigned long owner_id, unsigned long category_id,
                                  const char *created, const char *changed) {
 
-    if (!__mysql_prepare_stmt(&mysql_insert_origin_stmt, mysql_insert_origin_sql))
+    if (!__mysql_prepare_stmt(&__mysql_origin->add_stmt, __mysql_origin->add_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
     MYSQL_BIND *p = __mysql_create_binds(6);
@@ -313,11 +352,11 @@ unsigned long __mysql_add_origin(unsigned long hash_id, const char *name, int le
     p[5].buffer = (char *) changed;
     p[5].buffer_length = !is_null_or_empty(changed) ? strlen(changed) : 0;
 
-    unsigned long id = __mysql_execute(mysql_insert_origin_stmt, p);
+    unsigned long id = __mysql_execute(__mysql_origin->add_stmt, p);
     if (id == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
-    mysql_stmt_free_result(mysql_insert_origin_stmt);
+    mysql_stmt_free_result(__mysql_origin->add_stmt);
     free(p);
 
     return id;
@@ -328,7 +367,7 @@ unsigned long __mysql_add_origin(unsigned long hash_id, const char *name, int le
  */
 unsigned long __mysql_get_origin_id(unsigned long hash_id, const char *name, int len) {
 
-    if (!__mysql_prepare_stmt(&mysql_select_origin_id_stmt, mysql_select_origin_id_sql))
+    if (!__mysql_prepare_stmt(&__mysql_origin->get_stmt, __mysql_origin->get_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
     MYSQL_BIND *p = __mysql_create_binds(2);
@@ -341,11 +380,11 @@ unsigned long __mysql_get_origin_id(unsigned long hash_id, const char *name, int
     unsigned long id = 0;
     MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
 
-    int ret = __mysql_fetch_result(mysql_select_origin_id_stmt, p, r);
+    int ret = __mysql_fetch_result(__mysql_origin->get_stmt, p, r);
     if (ret == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
-    mysql_stmt_free_result(mysql_select_origin_id_stmt);
+    mysql_stmt_free_result(__mysql_origin->get_stmt);
     free(r);
     free(p);
 
@@ -358,9 +397,9 @@ unsigned long __mysql_get_origin_id(unsigned long hash_id, const char *name, int
 /**
  * @return id on success, -1 on fail
  */
-unsigned long __mysql_add_mapping(unsigned long key1, unsigned long key2, MYSQL_STMT **stmt, const char *sql) {
+unsigned long __mysql_add_mapping(unsigned long key1, unsigned long key2, struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(stmt, sql))
+    if (!__mysql_prepare_stmt(&query->add_stmt, query->add_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
     MYSQL_BIND *p = __mysql_create_binds(2);
@@ -369,11 +408,11 @@ unsigned long __mysql_add_mapping(unsigned long key1, unsigned long key2, MYSQL_
     p[1].buffer_type = MYSQL_TYPE_LONG;
     p[1].buffer = &key2;
 
-    unsigned long id = __mysql_execute(*stmt, p);
+    unsigned long id = __mysql_execute(query->add_stmt, p);
     if (id == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
-    mysql_stmt_free_result(*stmt);
+    mysql_stmt_free_result(query->add_stmt);
     free(p);
 
     return id;
@@ -382,9 +421,9 @@ unsigned long __mysql_add_mapping(unsigned long key1, unsigned long key2, MYSQL_
 /**
  * @return id if found, -1 on error, 0 if no data found
  */
-unsigned long __mysql_get_mapping_id(unsigned long key1, unsigned long key2, MYSQL_STMT **stmt, const char *sql) {
+unsigned long __mysql_get_mapping_id(unsigned long key1, unsigned long key2, struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(stmt, sql))
+    if (!__mysql_prepare_stmt(&query->get_stmt, query->get_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
     MYSQL_BIND *p = __mysql_create_binds(2);
@@ -396,11 +435,11 @@ unsigned long __mysql_get_mapping_id(unsigned long key1, unsigned long key2, MYS
     unsigned long id = 0;
     MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
 
-    int ret = __mysql_fetch_result(*stmt, p, r);
+    int ret = __mysql_fetch_result(query->get_stmt, p, r);
     if (ret == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
-    mysql_stmt_free_result(*stmt);
+    mysql_stmt_free_result(query->get_stmt);
     free(r);
     free(p);
 
@@ -408,15 +447,6 @@ unsigned long __mysql_get_mapping_id(unsigned long key1, unsigned long key2, MYS
         return 0;
 
     return id;
-}
-
-/**
- *
- */
-void __mysql_close_stmt(MYSQL_STMT **stmt) {
-    if (*stmt != NULL)
-        mysql_stmt_close(*stmt);
-    *stmt = NULL;
 }
 
 /**
@@ -438,6 +468,8 @@ int archive_metadata_db_connect(const char *host, const char *user, const char *
         return 0;
     }
 
+    __mysql_create_queries();
+
     return 1;
 }
 
@@ -446,12 +478,13 @@ int archive_metadata_db_connect(const char *host, const char *user, const char *
  */
 void archive_metadata_db_disconnect() {
 
-    __mysql_close_stmt(&mysql_select_hash_id_stmt);
-    __mysql_close_stmt(&mysql_insert_hash_stmt);
-    __mysql_close_stmt(&mysql_select_person_id_stmt);
-    __mysql_close_stmt(&mysql_insert_person_stmt);
-    __mysql_close_stmt(&mysql_select_tag_id_stmt);
-    __mysql_close_stmt(&mysql_insert_tag_stmt);
+    __mysql_close_query(__mysql_hash);
+    __mysql_close_query(__mysql_person);
+    __mysql_close_query(__mysql_tag);
+    __mysql_close_query(__mysql_category);
+    __mysql_close_query(__mysql_origin);
+    __mysql_close_query(__mysql_participant_mapping);
+    __mysql_close_query(__mysql_tag_mapping);
 
     mysql_close(mysql);
 }
@@ -467,11 +500,9 @@ unsigned long archive_metadata_db_get_hash_id(const char *hash) {
 
     int len = strnlen(hash, 512);
 
-    unsigned long id = __mysql_get_name_id(hash, len,
-                                           &mysql_select_hash_id_stmt, mysql_select_hash_id_sql);
+    unsigned long id = __mysql_get_name_id(hash, len, __mysql_hash);
     if (id == 0)
-        id = __mysql_add_name(hash, len,
-                              &mysql_insert_hash_stmt, mysql_insert_hash_sql);
+        id = __mysql_add_name(hash, len, __mysql_hash);
 
     return id;
 }
@@ -486,11 +517,9 @@ unsigned long archive_metadata_db_get_person_id(const char *owner) {
 
     int len = strnlen(owner, 512);
 
-    unsigned long id = __mysql_get_name_id(owner, len,
-                                           &mysql_select_person_id_stmt, mysql_select_person_id_sql);
+    unsigned long id = __mysql_get_name_id(owner, len, __mysql_person);
     if (id == 0)
-        id = __mysql_add_name(owner, len,
-                              &mysql_insert_person_stmt, mysql_insert_person_sql);
+        id = __mysql_add_name(owner, len, __mysql_person);
 
     return id;
 }
@@ -516,11 +545,9 @@ unsigned long archive_metadata_db_get_category_id(const char *category) {
         *sep = '\0';
 
         if (start[0] != '\0') {
-            id = __mysql_get_tree_item_id(parent_id, start, strlen(start),
-                                          &mysql_select_category_id_stmt, mysql_select_category_id_sql);
+            id = __mysql_get_tree_item_id(parent_id, start, strlen(start), __mysql_category);
             if (id == 0)
-                id = __mysql_add_tree_item(parent_id, start, strlen(start),
-                                           &mysql_insert_category_stmt, mysql_insert_category_sql);
+                id = __mysql_add_tree_item(parent_id, start, strlen(start), __mysql_category);
 
             parent_id = id;
         }
@@ -541,11 +568,9 @@ unsigned long archive_metadata_db_get_tag_id(const char *tag) {
 
     int len = strnlen(tag, 512);
 
-    unsigned long id = __mysql_get_name_id(tag, len,
-                                           &mysql_select_tag_id_stmt, mysql_select_tag_id_sql);
+    unsigned long id = __mysql_get_name_id(tag, len, __mysql_tag);
     if (id == 0)
-        id = __mysql_add_name(tag, len,
-                              &mysql_insert_tag_stmt, mysql_insert_tag_sql);
+        id = __mysql_add_name(tag, len, __mysql_tag);
 
     return id;
 }
@@ -578,11 +603,9 @@ unsigned long archive_metadata_db_get_origin_id(unsigned long hash_id, const cha
  */
 unsigned long archive_metadata_db_assign_participant(unsigned long origin_id, unsigned long person_id) {
 
-    unsigned long id = __mysql_get_mapping_id(origin_id, person_id,
-                                              &mysql_select_participant_mapping_id_stmt, mysql_select_participant_mapping_id_sql);
+    unsigned long id = __mysql_get_mapping_id(origin_id, person_id, __mysql_participant_mapping);
     if (id == 0)
-        id = __mysql_add_mapping(origin_id, person_id,
-                                 &mysql_insert_participant_mapping_stmt, mysql_insert_participant_mapping_sql);
+        id = __mysql_add_mapping(origin_id, person_id, __mysql_participant_mapping);
 
     return id;
 }
@@ -592,11 +615,9 @@ unsigned long archive_metadata_db_assign_participant(unsigned long origin_id, un
  */
 unsigned long archive_metadata_db_assign_tag(unsigned long origin_id, unsigned long tag_id) {
 
-    unsigned long id = __mysql_get_mapping_id(origin_id, tag_id,
-                                              &mysql_select_tag_mapping_id_stmt, mysql_select_tag_mapping_id_sql);
+    unsigned long id = __mysql_get_mapping_id(origin_id, tag_id, __mysql_tag_mapping);
     if (id == 0)
-        id = __mysql_add_mapping(origin_id, tag_id,
-                                 &mysql_insert_tag_mapping_stmt, mysql_insert_tag_mapping_sql);
+        id = __mysql_add_mapping(origin_id, tag_id, __mysql_tag_mapping);
 
     return id;
 

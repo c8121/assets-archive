@@ -75,10 +75,10 @@ int archive_metadata_db_add(const char *hash, cJSON *origin) {
     char *changed = archive_metadata_json_get_changed(origin);
 
     char *category = archive_metadata_json_get_category(origin);
-    unsigned long category_id = archive_metadata_db_get_category_id(category);
+    unsigned long category_id = !is_null_or_empty(category) ? archive_metadata_db_get_category_id(category) : 0;
 
     char *owner = archive_metadata_json_get_owner(origin);
-    unsigned long owner_id = !is_null_or_empty(owner) ? archive_metadata_db_get_person_id(owner) : -1;
+    unsigned long owner_id = !is_null_or_empty(owner) ? archive_metadata_db_get_person_id(owner) : 0;
 
     unsigned long origin_id = archive_metadata_db_get_origin_id(hash_id, name, owner_id, category_id,
                                                                 created, changed
