@@ -375,13 +375,15 @@ unsigned long archive_metadata_db_get_category_id(const char *category) {
             sep = start + strlen(start) + 1;
         *sep = '\0';
 
-        id = __mysql_get_tree_item_id(parent_id, start, strlen(start),
-                                      &mysql_select_category_id_stmt, mysql_select_category_id_sql);
-        if (id == 0)
-            id = __mysql_add_tree_item(parent_id, start, strlen(start),
-                                       &mysql_select_category_add_stmt, mysql_select_category_add_sql);
+        if (start[0] != '\0') {
+            id = __mysql_get_tree_item_id(parent_id, start, strlen(start),
+                                          &mysql_select_category_id_stmt, mysql_select_category_id_sql);
+            if (id == 0)
+                id = __mysql_add_tree_item(parent_id, start, strlen(start),
+                                           &mysql_select_category_add_stmt, mysql_select_category_add_sql);
 
-        parent_id = id;
+            parent_id = id;
+        }
         start = sep + 1;
     }
 
