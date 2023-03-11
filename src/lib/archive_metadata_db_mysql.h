@@ -33,26 +33,26 @@ void *mysql = NULL;
 const char *mysql_select_hash_id_sql = "SELECT ID FROM HASH WHERE HASH=?;";
 MYSQL_STMT *mysql_select_hash_id_stmt = NULL;
 
-const char *mysql_select_hash_add_sql = "INSERT INTO HASH(HASH) VALUES(?);";
-MYSQL_STMT *mysql_select_hash_add_stmt = NULL;
+const char *mysql_insert_hash_sql = "INSERT INTO HASH(HASH) VALUES(?);";
+MYSQL_STMT *mysql_insert_hash_stmt = NULL;
 
 const char *mysql_select_person_id_sql = "SELECT ID FROM PERSON WHERE NAME=?;";
 MYSQL_STMT *mysql_select_person_id_stmt = NULL;
 
-const char *mysql_select_person_add_sql = "INSERT INTO PERSON(NAME) VALUES(?);";
-MYSQL_STMT *mysql_select_person_add_stmt = NULL;
+const char *mysql_insert_person_sql = "INSERT INTO PERSON(NAME) VALUES(?);";
+MYSQL_STMT *mysql_insert_person_stmt = NULL;
 
 const char *mysql_select_tag_id_sql = "SELECT ID FROM TAG WHERE TAG=?;";
 MYSQL_STMT *mysql_select_tag_id_stmt = NULL;
 
-const char *mysql_select_tag_add_sql = "INSERT INTO TAG(TAG) VALUES(?);";
-MYSQL_STMT *mysql_select_tag_add_stmt = NULL;
+const char *mysql_insert_tag_sql = "INSERT INTO TAG(TAG) VALUES(?);";
+MYSQL_STMT *mysql_insert_tag_stmt = NULL;
 
 const char *mysql_select_category_id_sql = "SELECT ID FROM CATEGORY WHERE PARENT=? AND NAME=?;";
 MYSQL_STMT *mysql_select_category_id_stmt = NULL;
 
-const char *mysql_select_category_add_sql = "INSERT INTO CATEGORY(PARENT, NAME) VALUES(?, ?);";
-MYSQL_STMT *mysql_select_category_add_stmt = NULL;
+const char *mysql_insert_category_sql = "INSERT INTO CATEGORY(PARENT, NAME) VALUES(?, ?);";
+MYSQL_STMT *mysql_insert_category_stmt = NULL;
 
 
 /**
@@ -307,11 +307,11 @@ int archive_metadata_db_connect(const char *host, const char *user, const char *
 void archive_metadata_db_disconnect() {
 
     __mysql_close_stmt(&mysql_select_hash_id_stmt);
-    __mysql_close_stmt(&mysql_select_hash_add_stmt);
+    __mysql_close_stmt(&mysql_insert_hash_stmt);
     __mysql_close_stmt(&mysql_select_person_id_stmt);
-    __mysql_close_stmt(&mysql_select_person_add_stmt);
+    __mysql_close_stmt(&mysql_insert_person_stmt);
     __mysql_close_stmt(&mysql_select_tag_id_stmt);
-    __mysql_close_stmt(&mysql_select_tag_add_stmt);
+    __mysql_close_stmt(&mysql_insert_tag_stmt);
 
     mysql_close(mysql);
 }
@@ -331,7 +331,7 @@ unsigned long archive_metadata_db_get_hash_id(const char *hash) {
                                            &mysql_select_hash_id_stmt, mysql_select_hash_id_sql);
     if (id == 0)
         id = __mysql_add_name(hash, len,
-                              &mysql_select_hash_add_stmt, mysql_select_hash_add_sql);
+                              &mysql_insert_hash_stmt, mysql_insert_hash_sql);
 
     return id;
 }
@@ -350,7 +350,7 @@ unsigned long archive_metadata_db_get_person_id(const char *owner) {
                                            &mysql_select_person_id_stmt, mysql_select_person_id_sql);
     if (id == 0)
         id = __mysql_add_name(owner, len,
-                              &mysql_select_person_add_stmt, mysql_select_person_add_sql);
+                              &mysql_insert_person_stmt, mysql_insert_person_sql);
 
     return id;
 }
@@ -380,7 +380,7 @@ unsigned long archive_metadata_db_get_category_id(const char *category) {
                                           &mysql_select_category_id_stmt, mysql_select_category_id_sql);
             if (id == 0)
                 id = __mysql_add_tree_item(parent_id, start, strlen(start),
-                                           &mysql_select_category_add_stmt, mysql_select_category_add_sql);
+                                           &mysql_insert_category_stmt, mysql_insert_category_sql);
 
             parent_id = id;
         }
@@ -405,7 +405,7 @@ unsigned long archive_metadata_db_get_tag_id(const char *tag) {
                                            &mysql_select_tag_id_stmt, mysql_select_tag_id_sql);
     if (id == 0)
         id = __mysql_add_name(tag, len,
-                              &mysql_select_tag_add_stmt, mysql_select_tag_add_sql);
+                              &mysql_insert_tag_stmt, mysql_insert_tag_sql);
 
     return id;
 }
