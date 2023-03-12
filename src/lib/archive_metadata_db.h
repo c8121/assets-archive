@@ -32,6 +32,7 @@
 #include "char_util.h"
 #include "archive_metadata_json.h"
 
+#define MAX_LENGTH_SUBJECT 1024
 #define MAX_LENGTH_PERSON_NAME 254
 #define MAX_LENGTH_TAG_NAME 254
 #define MAX_LENGTH_CATEGORY_NAME 254
@@ -54,7 +55,7 @@ unsigned long archive_metadata_db_get_person_id(const char *owner);
 
 unsigned long archive_metadata_db_get_tag_id(const char *tag);
 
-unsigned long archive_metadata_db_get_origin_id(unsigned long hash_id, const char *name,
+unsigned long archive_metadata_db_get_origin_id(unsigned long hash_id, const char *name, const char *subject,
                                                 unsigned long owner_id, unsigned long category_id,
                                                 const char *created, const char *changed);
 
@@ -82,10 +83,13 @@ int archive_metadata_db_add(const char *hash, cJSON *origin) {
     char *category = archive_metadata_json_get_category(origin);
     unsigned long category_id = !is_null_or_empty(category) ? archive_metadata_db_get_category_id(category) : 0;
 
+    char *subject = archive_metadata_json_get_subject(origin);
+
     char *owner = archive_metadata_json_get_owner(origin);
     unsigned long owner_id = !is_null_or_empty(owner) ? archive_metadata_db_get_person_id(owner) : 0;
 
-    unsigned long origin_id = archive_metadata_db_get_origin_id(hash_id, name, owner_id, category_id,
+    unsigned long origin_id = archive_metadata_db_get_origin_id(hash_id, name, subject,
+                                                                owner_id, category_id,
                                                                 created, changed
     );
 

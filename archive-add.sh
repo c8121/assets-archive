@@ -31,8 +31,12 @@ function add_to_archive() {
     groups=$(grep "^$(stat -c '%G' "$file"):" /etc/group | awk -F':' '{gsub(","," "); print $4}')
     filetime=$(date -r "$file" "+%Y-%m-%d %H:%M:%S")
     dirname=$(dirname "$file")
+    filename=$(basename "$file")
 
-    $METADATA_COMMAND "add-origin" "$hash" "$file" -owner "$owner" -participants $groups -category "$dirname" -created "$filetime" -changed "$filetime"
+    $METADATA_COMMAND "add-origin" "$hash" "$file" \
+      -owner "$owner" -participants $groups \
+      -category "$dirname" -subject "$filename" \
+      -created "$filetime" -changed "$filetime"
   else
     echo "Failed to add file ($hash)"
   fi

@@ -88,7 +88,7 @@ void __mysql_create_queries() {
 
     __mysql_origin = __mysql_create_query(
             "SELECT ID FROM ORIGIN WHERE HASH=? AND NAME=?;",
-            "INSERT INTO ORIGIN(HASH, NAME, OWNER, CATEGORY, CREATED, CHANGED) VALUES(?, ?, ?, ?, ?, ?);"
+            "INSERT INTO ORIGIN(HASH, NAME, SUBJECT, OWNER, CATEGORY, CREATED, CHANGED) VALUES(?, ?, ?, ?, ?, ?, ?);"
     );
 
     __mysql_participant_mapping = __mysql_create_query(
@@ -331,29 +331,32 @@ unsigned long __mysql_get_tree_item_id(unsigned long parent, const char *name, i
 /**
  * @return id on success, -1 on fail
  */
-unsigned long __mysql_add_origin(unsigned long hash_id, const char *name, int len,
+unsigned long __mysql_add_origin(unsigned long hash_id, const char *name, const char *subject,
                                  unsigned long owner_id, unsigned long category_id,
                                  const char *created, const char *changed) {
 
     if (!__mysql_prepare_stmt(&__mysql_origin->add_stmt, __mysql_origin->add_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    MYSQL_BIND *p = __mysql_create_binds(6);
+    MYSQL_BIND *p = __mysql_create_binds(7);
     p[0].buffer_type = MYSQL_TYPE_LONG;
     p[0].buffer = &hash_id;
     p[1].buffer_type = MYSQL_TYPE_STRING;
     p[1].buffer = (char *) name;
-    p[1].buffer_length = len;
-    p[2].buffer_type = MYSQL_TYPE_LONG;
-    p[2].buffer = &owner_id;
+    p[1].buffer_length = strnlen(name, MAX_LENGTH_ORIGIN_NAME);
+    p[2].buffer_type = !is_null_or_empty(subject) ? MYSQL_TYPE_STRING : MYSQL_TYPE_NULL;
+    p[2].buffer = (char *) subject;
+    p[2].buffer_length = !is_null_or_empty(subject) ? strnlen(subject, MAX_LENGTH_SUBJECT) : 0;
     p[3].buffer_type = MYSQL_TYPE_LONG;
-    p[3].buffer = &category_id;
-    p[4].buffer_type = !is_null_or_empty(created) ? MYSQL_TYPE_STRING : MYSQL_TYPE_NULL;
-    p[4].buffer = (char *) created;
-    p[4].buffer_length = !is_null_or_empty(created) ? strlen(created) : 0;
-    p[5].buffer_type = !is_null_or_empty(changed) ? MYSQL_TYPE_STRING : MYSQL_TYPE_NULL;
-    p[5].buffer = (char *) changed;
-    p[5].buffer_length = !is_null_or_empty(changed) ? strlen(changed) : 0;
+    p[3].buffer = &owner_id;
+    p[4].buffer_type = MYSQL_TYPE_LONG;
+    p[4].buffer = &category_id;
+    p[5].buffer_type = !is_null_or_empty(created) ? MYSQL_TYPE_STRING : MYSQL_TYPE_NULL;
+    p[5].buffer = (char *) created;
+    p[5].buffer_length = !is_null_or_empty(created) ? strlen(created) : 0;
+    p[6].buffer_type = !is_null_or_empty(changed) ? MYSQL_TYPE_STRING : MYSQL_TYPE_NULL;
+    p[6].buffer = (char *) changed;
+    p[6].buffer_length = !is_null_or_empty(changed) ? strlen(changed) : 0;
 
     unsigned long id = __mysql_execute(__mysql_origin->add_stmt, p);
     if (id == -1)
@@ -368,7 +371,7 @@ unsigned long __mysql_add_origin(unsigned long hash_id, const char *name, int le
 /**
  * @return id if found, -1 on error, 0 if no data found
  */
-unsigned long __mysql_get_origin_id(unsigned long hash_id, const char *name, int len) {
+unsigned long __mysql_get_origin_id(unsigned long hash_id, const char *name) {
 
     if (!__mysql_prepare_stmt(&__mysql_origin->get_stmt, __mysql_origin->get_sql))
         fail(EX_IOERR, "Failed to prepare statement");
@@ -378,7 +381,7 @@ unsigned long __mysql_get_origin_id(unsigned long hash_id, const char *name, int
     p[0].buffer = &hash_id;
     p[1].buffer_type = MYSQL_TYPE_STRING;
     p[1].buffer = (char *) name;
-    p[1].buffer_length = len;
+    p[1].buffer_length = strnlen(name, MAX_LENGTH_ORIGIN_NAME);
 
     unsigned long id = 0;
     MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
@@ -583,18 +586,16 @@ unsigned long archive_metadata_db_get_tag_id(const char *tag) {
 /**
  *
  */
-unsigned long archive_metadata_db_get_origin_id(unsigned long hash_id, const char *name,
+unsigned long archive_metadata_db_get_origin_id(unsigned long hash_id, const char *name, const char *subject,
                                                 unsigned long owner_id, unsigned long category_id,
                                                 const char *created, const char *changed) {
 
     if (is_null_or_empty(name))
         fail(EX_DATAERR, "Origin name cannot be null or empty");
 
-    int len = strnlen(name, MAX_LENGTH_ORIGIN_NAME);
-
-    unsigned long id = __mysql_get_origin_id(hash_id, name, len);
+    unsigned long id = __mysql_get_origin_id(hash_id, name);
     if (id == 0)
-        id = __mysql_add_origin(hash_id, name, len,
+        id = __mysql_add_origin(hash_id, name, subject,
                                 owner_id, category_id,
                                 created, changed
         );

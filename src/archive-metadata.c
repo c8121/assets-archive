@@ -66,6 +66,7 @@ void usage_message(int argc, char *argv[]) {
     printf("Available commands:\n");
     printf("    get <hash>\n");
     printf("    add-origin <hash> <name> \\\n");
+    printf("         [-subject <subject>] \\\n");
     printf("         [-tags [<tag>,...]] \\\n");
     printf("         [-created <yyyy-mm-ss hh:mm:ss>] \\\n");
     printf("         [-changed <yyyy-mm-ss hh:mm:ss>] \\\n");
@@ -206,6 +207,14 @@ void command_add_origin(int argi, int argc, char *argv[]) {
             if (++i < argc) {
                 if (origin != NULL) {
                     archive_metadata_json_set_owner(origin, argv[i]);
+                }
+            }
+
+        } else if (is_equal("-subject", argv[i])) {
+
+            if (++i < argc) {
+                if (origin != NULL) {
+                    archive_metadata_json_set_subject(origin, argv[i]);
                 }
             }
 

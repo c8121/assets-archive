@@ -317,6 +317,20 @@ char *archive_metadata_json_get_origin_name(cJSON *origin) {
 /**
  *
  */
+cJSON *archive_metadata_json_set_subject(cJSON *origin, const char *subject) {
+    return __archive_metadata_json_add_string(origin, "subject", subject);
+}
+
+/**
+ *
+ */
+char *archive_metadata_json_get_subject(cJSON *origin) {
+    return __archive_metadata_json_get_string(origin, "subject");
+}
+
+/**
+ *
+ */
 cJSON *archive_metadata_json_get_tags(cJSON *origin) {
     return __archive_metadata_json_get_array(origin, "tags");
 }

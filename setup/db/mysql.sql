@@ -45,6 +45,7 @@ CREATE TABLE `ORIGIN`
     `ID`       int(11) NOT NULL AUTO_INCREMENT,
     `HASH`     int(11)       DEFAULT NULL,
     `NAME`     varchar(4096) DEFAULT NULL,
+    `SUBJECT`  varchar(1024) DEFAULT NULL,
     `OWNER`    int(11)       DEFAULT NULL,
     `CATEGORY` int(11)       DEFAULT NULL,
     `CREATED`  datetime      DEFAULT NULL,
