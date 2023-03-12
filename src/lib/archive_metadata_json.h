@@ -35,6 +35,12 @@
 #include "archive_storage.h"
 #include "time_util.h"
 
+#define MAX_LENGTH_JSON_STRING 4096
+
+#define MAX_LENGTH_ORIGIN_NAME 4096
+
+#define JSON_FILE_READ_BUFFER_LENGTH 1024
+
 #define DEFAULT_ARCHIVE_METADATA_SUFFIX ".json"
 
 char *archive_metadata_json_suffix = NULL;
@@ -49,7 +55,7 @@ void __archive_metadata_json_init() {
         archive_metadata_json_suffix = str_copy(DEFAULT_ARCHIVE_METADATA_SUFFIX,
                                                 strlen(DEFAULT_ARCHIVE_METADATA_SUFFIX));
     if (archive_metadata_json_suffix_len == -1)
-        archive_metadata_json_suffix_len = strnlen(archive_metadata_json_suffix, 255);
+        archive_metadata_json_suffix_len = strnlen(archive_metadata_json_suffix, MAX_LENGTH_ARCHIVE_FILENAME_SUFFIX);
 }
 
 /**
@@ -85,7 +91,7 @@ cJSON *__archive_metadata_json_add_string_to_array(cJSON *array, const char *s) 
 
     cJSON *existing;
     cJSON_ArrayForEach(existing, array) {
-        if (cJSON_IsString(existing) && strncmp(existing->valuestring, s, 1024) == 0)
+        if (cJSON_IsString(existing) && strncmp(existing->valuestring, s, MAX_LENGTH_JSON_STRING) == 0)
             return existing;
     }
 
@@ -165,9 +171,9 @@ cJSON *archive_metadata_json_load(char *file_name) {
         return NULL;
     }
 
-    char buf[1024];
-    while (fgets(buf, 1024, fp) != NULL) {
-        cb = char_buffer_append(cb, buf, strnlen(buf, 1024));
+    char buf[JSON_FILE_READ_BUFFER_LENGTH];
+    while (fgets(buf, JSON_FILE_READ_BUFFER_LENGTH, fp) != NULL) {
+        cb = char_buffer_append(cb, buf, strnlen(buf, JSON_FILE_READ_BUFFER_LENGTH));
     }
 
     fclose(fp);
@@ -276,7 +282,7 @@ cJSON *archive_metadata_json_get_origin(cJSON *metadata_json, const char *name) 
     //Find origin by name
     cJSON_ArrayForEach(origin, origins) {
         cJSON *name_json = cJSON_GetObjectItem(origin, "name");
-        if (cJSON_IsString(name_json) && strncmp(name_json->valuestring, name, 2048) == 0) {
+        if (cJSON_IsString(name_json) && strncmp(name_json->valuestring, name, MAX_LENGTH_ORIGIN_NAME) == 0) {
             return origin;
         }
     }

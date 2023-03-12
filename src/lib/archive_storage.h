@@ -32,7 +32,13 @@
 #include "file_util.h"
 #include "command_util.h"
 
+#define MAX_LENGTH_HASH 254
 #define SPLIT_HASH_AT 2
+
+#define MAX_LENGTH_TIME_PERIOD 20
+#define MAX_LENGTH_STORAGE_BASE_DIR 254
+#define MAX_LENGTH_ARCHIVE_FILENAME 254
+#define MAX_LENGTH_ARCHIVE_FILENAME_SUFFIX 20
 
 #define COPY_BUFFER_SIZE 4096
 
@@ -71,12 +77,12 @@ void __archive_storage_init() {
     if (archive_storage_base_dir == NULL)
         archive_storage_base_dir = str_copy(DEFAULT_STORAGE_BASE_DIR, strlen(DEFAULT_STORAGE_BASE_DIR));
     if (archive_storage_base_dir_len == -1)
-        archive_storage_base_dir_len = strnlen(archive_storage_base_dir, 255);
+        archive_storage_base_dir_len = strnlen(archive_storage_base_dir, MAX_LENGTH_STORAGE_BASE_DIR);
 
     if (archive_storage_file_suffix == NULL)
         archive_storage_file_suffix = str_copy(DEFAULT_STORAGE_FILE_SUFFIX, strlen(DEFAULT_STORAGE_FILE_SUFFIX));
     if (archive_storage_file_suffix_len == -1)
-        archive_storage_file_suffix_len = strnlen(archive_storage_file_suffix, 255);
+        archive_storage_file_suffix_len = strnlen(archive_storage_file_suffix, MAX_LENGTH_ARCHIVE_FILENAME_SUFFIX);
 
     //Create seed for rand() used in archive_storage_tmpnam.
     srand(time(NULL));
@@ -189,7 +195,7 @@ int archive_storage_validate() {
  */
 char *archive_storage_time_period_name(time_t t) {
 
-    char *name = malloc(20);
+    char *name = malloc(MAX_LENGTH_TIME_PERIOD);
     sprintf(name, "%lx", t / 60 / 60 / 24 / 4);
 
     return name;
@@ -206,7 +212,7 @@ char *archive_storage_get_path_with_suffix(char *hash, char *suffix, int suffix_
 
     __archive_storage_init();
 
-    if (strnlen(hash, 255) <= SPLIT_HASH_AT) {
+    if (strnlen(hash, MAX_LENGTH_HASH) <= SPLIT_HASH_AT) {
         fprintf(stderr, "Invalid hash length\n");
         return NULL;
     }
@@ -217,12 +223,12 @@ char *archive_storage_get_path_with_suffix(char *hash, char *suffix, int suffix_
 
     cb = char_buffer_append(cb, archive_storage_base_dir, archive_storage_base_dir_len);
     cb = char_buffer_append(cb, path_separator, path_separator_len);
-    cb = char_buffer_append(cb, period_name, strnlen(period_name, 20));
+    cb = char_buffer_append(cb, period_name, strnlen(period_name, MAX_LENGTH_TIME_PERIOD));
     cb = char_buffer_append(cb, path_separator, path_separator_len);
 
     cb = char_buffer_append(cb, hash, SPLIT_HASH_AT);
     cb = char_buffer_append(cb, path_separator, path_separator_len);
-    cb = char_buffer_append(cb, hash + SPLIT_HASH_AT, strnlen(hash, 255) - SPLIT_HASH_AT);
+    cb = char_buffer_append(cb, hash + SPLIT_HASH_AT, strnlen(hash, MAX_LENGTH_HASH) - SPLIT_HASH_AT);
 
     if (!is_null_or_empty(suffix))
         cb = char_buffer_append(cb, suffix, suffix_len);
@@ -318,7 +324,7 @@ char *archive_storage_find_file(char *hash) {
 
     __archive_storage_init();
 
-    if (strnlen(hash, 255) <= SPLIT_HASH_AT) {
+    if (strnlen(hash, MAX_LENGTH_HASH) <= SPLIT_HASH_AT) {
         fprintf(stderr, "Invalid hash length\n");
         return NULL;
     }
@@ -340,15 +346,15 @@ char *archive_storage_find_file(char *hash) {
         if (e->d_name[0] == '\0' || strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0)
             continue;
 
-        cb = char_buffer_append(cb, archive_storage_base_dir, strnlen(archive_storage_base_dir, 255));
+        cb = char_buffer_append(cb, archive_storage_base_dir, strnlen(archive_storage_base_dir, MAX_LENGTH_STORAGE_BASE_DIR));
         cb = char_buffer_append(cb, path_separator, path_separator_len);
-        cb = char_buffer_append(cb, e->d_name, strnlen(e->d_name, 255));
+        cb = char_buffer_append(cb, e->d_name, strnlen(e->d_name, MAX_LENGTH_ARCHIVE_FILENAME));
         cb = char_buffer_append(cb, path_separator, path_separator_len);
 
         cb = char_buffer_append(cb, subdir, SPLIT_HASH_AT);
         cb = char_buffer_append(cb, path_separator, path_separator_len);
-        cb = char_buffer_append(cb, hash + SPLIT_HASH_AT, strnlen(hash, 255) - SPLIT_HASH_AT);
-        cb = char_buffer_append(cb, archive_storage_file_suffix, strnlen(archive_storage_file_suffix, 255));
+        cb = char_buffer_append(cb, hash + SPLIT_HASH_AT, strnlen(hash, MAX_LENGTH_HASH) - SPLIT_HASH_AT);
+        cb = char_buffer_append(cb, archive_storage_file_suffix, archive_storage_file_suffix_len);
 
         path = char_buffer_copy(cb);
         char_buffer_free(cb);
@@ -394,14 +400,14 @@ char *archive_storage_tmpnam(char *suffix) {
     for (int i = 0; i < 1000; i++) {
 
         struct char_buffer *cb = NULL;
-        cb = char_buffer_append(cb, archive_storage_base_dir, strnlen(archive_storage_base_dir, 255));
+        cb = char_buffer_append(cb, archive_storage_base_dir, strnlen(archive_storage_base_dir, MAX_LENGTH_STORAGE_BASE_DIR));
         cb = char_buffer_append(cb, path_separator, path_separator_len);
         cb = char_buffer_append(cb, archive_storage_temp_dirname, archive_storage_temp_dirname_len);
         cb = char_buffer_append(cb, path_separator, path_separator_len);
 
-        char file_name[512];
-        snprintf(file_name, 512, "%jd-%i-%X%s", time(NULL), rand(), arc4random(), suffix);
-        cb = char_buffer_append(cb, file_name, strnlen(file_name, 512));
+        char file_name[MAX_LENGTH_ARCHIVE_FILENAME];
+        snprintf(file_name, MAX_LENGTH_ARCHIVE_FILENAME, "%jd-%i-%X%s", time(NULL), rand(), arc4random(), suffix);
+        cb = char_buffer_append(cb, file_name, strnlen(file_name, MAX_LENGTH_ARCHIVE_FILENAME));
 
         char *path = char_buffer_copy(cb);
         char_buffer_free(cb);

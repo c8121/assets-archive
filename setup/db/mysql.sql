@@ -43,12 +43,12 @@ CREATE TABLE `CATEGORY`
 CREATE TABLE `ORIGIN`
 (
     `ID`       int(11) NOT NULL AUTO_INCREMENT,
-    `HASH`     int(11)      DEFAULT NULL,
-    `NAME`     varchar(254) DEFAULT NULL,
-    `OWNER`    int(11)      DEFAULT NULL,
-    `CATEGORY` int(11)      DEFAULT NULL,
-    `CREATED`  datetime     DEFAULT NULL,
-    `CHANGED`  datetime     DEFAULT NULL,
+    `HASH`     int(11)       DEFAULT NULL,
+    `NAME`     varchar(4096) DEFAULT NULL,
+    `OWNER`    int(11)       DEFAULT NULL,
+    `CATEGORY` int(11)       DEFAULT NULL,
+    `CREATED`  datetime      DEFAULT NULL,
+    `CHANGED`  datetime      DEFAULT NULL,
     PRIMARY KEY (`ID`),
     KEY `IDX_ORIGIN_HASH` (`HASH`),
     KEY `IDX_ORIGIN_NAME` (`NAME`(254)),

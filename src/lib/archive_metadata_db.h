@@ -32,6 +32,11 @@
 #include "char_util.h"
 #include "archive_metadata_json.h"
 
+#define MAX_LENGTH_PERSON_NAME 254
+#define MAX_LENGTH_TAG_NAME 254
+#define MAX_LENGTH_CATEGORY_NAME 254
+#define MAX_LENGTH_CATEGORY_PATH 4096
+
 #define CATEGORY_SEPARATOR '/'
 
 /**

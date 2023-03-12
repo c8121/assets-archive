@@ -28,6 +28,9 @@
 #include "util.h"
 #include "char_util.h"
 
+#include "archive_metadata_db.h"
+#include "archive_metadata_json.h"
+
 void *mysql = NULL;
 
 
@@ -498,7 +501,7 @@ unsigned long archive_metadata_db_get_hash_id(const char *hash) {
     if (is_null_or_empty(hash))
         fail(EX_DATAERR, "Owner name cannot be null or empty");
 
-    int len = strnlen(hash, 512);
+    int len = strnlen(hash, MAX_LENGTH_HASH);
 
     unsigned long id = __mysql_get_name_id(hash, len, __mysql_hash);
     if (id == 0)
@@ -515,7 +518,7 @@ unsigned long archive_metadata_db_get_person_id(const char *owner) {
     if (is_null_or_empty(owner))
         fail(EX_DATAERR, "Owner name cannot be null or empty");
 
-    int len = strnlen(owner, 512);
+    int len = strnlen(owner, MAX_LENGTH_PERSON_NAME);
 
     unsigned long id = __mysql_get_name_id(owner, len, __mysql_person);
     if (id == 0)
@@ -532,22 +535,24 @@ unsigned long archive_metadata_db_get_category_id(const char *category) {
     unsigned long id = 0;
     unsigned long parent_id = 0;
 
-    char *tmp = str_copy(category, strnlen(category, 1024) + 1);
+    char *tmp = str_copy(category, strnlen(category, MAX_LENGTH_CATEGORY_PATH) + 1);
     char *start = tmp;
     if (start[0] == CATEGORY_SEPARATOR)
         start++;
     char *last = start + strlen(start);
     char *sep;
+    size_t len;
     while (start < last) {
         sep = strchr(start, CATEGORY_SEPARATOR);
         if (sep == NULL)
-            sep = start + strlen(start) + 1;
+            sep = start + strnlen(start, MAX_LENGTH_CATEGORY_NAME) + 1;
         *sep = '\0';
+        len = strnlen(start, MAX_LENGTH_CATEGORY_NAME);
 
         if (start[0] != '\0') {
-            id = __mysql_get_tree_item_id(parent_id, start, strlen(start), __mysql_category);
+            id = __mysql_get_tree_item_id(parent_id, start, len, __mysql_category);
             if (id == 0)
-                id = __mysql_add_tree_item(parent_id, start, strlen(start), __mysql_category);
+                id = __mysql_add_tree_item(parent_id, start, len, __mysql_category);
 
             parent_id = id;
         }
@@ -566,7 +571,7 @@ unsigned long archive_metadata_db_get_tag_id(const char *tag) {
     if (is_null_or_empty(tag))
         fail(EX_DATAERR, "Tag name cannot be null or empty");
 
-    int len = strnlen(tag, 512);
+    int len = strnlen(tag, MAX_LENGTH_TAG_NAME);
 
     unsigned long id = __mysql_get_name_id(tag, len, __mysql_tag);
     if (id == 0)
@@ -585,7 +590,7 @@ unsigned long archive_metadata_db_get_origin_id(unsigned long hash_id, const cha
     if (is_null_or_empty(name))
         fail(EX_DATAERR, "Origin name cannot be null or empty");
 
-    int len = strnlen(name, 512);
+    int len = strnlen(name, MAX_LENGTH_ORIGIN_NAME);
 
     unsigned long id = __mysql_get_origin_id(hash_id, name, len);
     if (id == 0)
