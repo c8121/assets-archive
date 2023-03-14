@@ -121,13 +121,13 @@ void __mysql_close_query(struct __mysql_query *query) {
  */
 unsigned long __mysql_add_name(const char *name, int len, struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(mysql, &query->add_stmt, query->add_sql))
+    if (!mysql_util_prepare_stmt(mysql, &query->add_stmt, query->add_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    MYSQL_BIND *p = __mysql_create_bind(MYSQL_TYPE_STRING, (void *) name);
+    MYSQL_BIND *p = mysql_util_create_bind(MYSQL_TYPE_STRING, (void *) name);
     p->buffer_length = len;
 
-    unsigned long id = __mysql_execute(mysql, query->add_stmt, p);
+    unsigned long id = mysql_util_execute_insert(mysql, query->add_stmt, p);
     if (id == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
@@ -142,16 +142,16 @@ unsigned long __mysql_add_name(const char *name, int len, struct __mysql_query *
  */
 unsigned long __mysql_get_name_id(const char *name, int len, struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(mysql, &query->get_stmt, query->get_sql))
+    if (!mysql_util_prepare_stmt(mysql, &query->get_stmt, query->get_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    MYSQL_BIND *p = __mysql_create_bind(MYSQL_TYPE_STRING, (void *) name);
+    MYSQL_BIND *p = mysql_util_create_bind(MYSQL_TYPE_STRING, (void *) name);
     p->buffer_length = len;
 
     unsigned long id = 0;
-    MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
+    MYSQL_BIND *r = mysql_util_create_bind(MYSQL_TYPE_LONG, &id);
 
-    int ret = __mysql_fetch_result(mysql, query->get_stmt, p, r);
+    int ret = mysql_util_fetch_result(mysql, query->get_stmt, p, r);
     if (ret == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
@@ -171,17 +171,17 @@ unsigned long __mysql_get_name_id(const char *name, int len, struct __mysql_quer
 unsigned long __mysql_add_tree_item(unsigned long parent, const char *name, int len,
                                     struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(mysql, &query->add_stmt, query->add_sql))
+    if (!mysql_util_prepare_stmt(mysql, &query->add_stmt, query->add_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    MYSQL_BIND *p = __mysql_create_binds(2);
+    MYSQL_BIND *p = mysql_util_create_binds(2);
     p[0].buffer_type = MYSQL_TYPE_LONG;
     p[0].buffer = &parent;
     p[1].buffer_type = MYSQL_TYPE_STRING;
     p[1].buffer = (char *) name;
     p[1].buffer_length = len;
 
-    unsigned long id = __mysql_execute(mysql, query->add_stmt, p);
+    unsigned long id = mysql_util_execute_insert(mysql, query->add_stmt, p);
     if (id == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
@@ -197,10 +197,10 @@ unsigned long __mysql_add_tree_item(unsigned long parent, const char *name, int 
 unsigned long __mysql_get_tree_item_id(unsigned long parent, const char *name, int len,
                                        struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(mysql, &query->get_stmt, query->get_sql))
+    if (!mysql_util_prepare_stmt(mysql, &query->get_stmt, query->get_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    MYSQL_BIND *p = __mysql_create_binds(2);
+    MYSQL_BIND *p = mysql_util_create_binds(2);
     p[0].buffer_type = MYSQL_TYPE_LONG;
     p[0].buffer = &parent;
     p[1].buffer_type = MYSQL_TYPE_STRING;
@@ -208,9 +208,9 @@ unsigned long __mysql_get_tree_item_id(unsigned long parent, const char *name, i
     p[1].buffer_length = len;
 
     unsigned long id = 0;
-    MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
+    MYSQL_BIND *r = mysql_util_create_bind(MYSQL_TYPE_LONG, &id);
 
-    int ret = __mysql_fetch_result(mysql,query->get_stmt, p, r);
+    int ret = mysql_util_fetch_result(mysql,query->get_stmt, p, r);
     if (ret == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
@@ -231,10 +231,10 @@ unsigned long __mysql_add_origin(unsigned long hash_id, const char *name, const 
                                  unsigned long owner_id, unsigned long category_id,
                                  const char *created, const char *changed) {
 
-    if (!__mysql_prepare_stmt(mysql, &__mysql_origin->add_stmt, __mysql_origin->add_sql))
+    if (!mysql_util_prepare_stmt(mysql, &__mysql_origin->add_stmt, __mysql_origin->add_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    MYSQL_BIND *p = __mysql_create_binds(7);
+    MYSQL_BIND *p = mysql_util_create_binds(7);
     p[0].buffer_type = MYSQL_TYPE_LONG;
     p[0].buffer = &hash_id;
     p[1].buffer_type = MYSQL_TYPE_STRING;
@@ -254,7 +254,7 @@ unsigned long __mysql_add_origin(unsigned long hash_id, const char *name, const 
     p[6].buffer = (char *) changed;
     p[6].buffer_length = !is_null_or_empty(changed) ? strlen(changed) : 0;
 
-    unsigned long id = __mysql_execute(mysql, __mysql_origin->add_stmt, p);
+    unsigned long id = mysql_util_execute_insert(mysql, __mysql_origin->add_stmt, p);
     if (id == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
@@ -269,10 +269,10 @@ unsigned long __mysql_add_origin(unsigned long hash_id, const char *name, const 
  */
 unsigned long __mysql_get_origin_id(unsigned long hash_id, const char *name) {
 
-    if (!__mysql_prepare_stmt(mysql, &__mysql_origin->get_stmt, __mysql_origin->get_sql))
+    if (!mysql_util_prepare_stmt(mysql, &__mysql_origin->get_stmt, __mysql_origin->get_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    MYSQL_BIND *p = __mysql_create_binds(2);
+    MYSQL_BIND *p = mysql_util_create_binds(2);
     p[0].buffer_type = MYSQL_TYPE_LONG;
     p[0].buffer = &hash_id;
     p[1].buffer_type = MYSQL_TYPE_STRING;
@@ -280,9 +280,9 @@ unsigned long __mysql_get_origin_id(unsigned long hash_id, const char *name) {
     p[1].buffer_length = strnlen(name, MAX_LENGTH_ORIGIN_NAME);
 
     unsigned long id = 0;
-    MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
+    MYSQL_BIND *r = mysql_util_create_bind(MYSQL_TYPE_LONG, &id);
 
-    int ret = __mysql_fetch_result(mysql,__mysql_origin->get_stmt, p, r);
+    int ret = mysql_util_fetch_result(mysql,__mysql_origin->get_stmt, p, r);
     if (ret == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
@@ -301,16 +301,16 @@ unsigned long __mysql_get_origin_id(unsigned long hash_id, const char *name) {
  */
 unsigned long __mysql_add_mapping(unsigned long key1, unsigned long key2, struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(mysql, &query->add_stmt, query->add_sql))
+    if (!mysql_util_prepare_stmt(mysql, &query->add_stmt, query->add_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    MYSQL_BIND *p = __mysql_create_binds(2);
+    MYSQL_BIND *p = mysql_util_create_binds(2);
     p[0].buffer_type = MYSQL_TYPE_LONG;
     p[0].buffer = &key1;
     p[1].buffer_type = MYSQL_TYPE_LONG;
     p[1].buffer = &key2;
 
-    unsigned long id = __mysql_execute(mysql, query->add_stmt, p);
+    unsigned long id = mysql_util_execute_insert(mysql, query->add_stmt, p);
     if (id == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
@@ -325,19 +325,19 @@ unsigned long __mysql_add_mapping(unsigned long key1, unsigned long key2, struct
  */
 unsigned long __mysql_get_mapping_id(unsigned long key1, unsigned long key2, struct __mysql_query *query) {
 
-    if (!__mysql_prepare_stmt(mysql, &query->get_stmt, query->get_sql))
+    if (!mysql_util_prepare_stmt(mysql, &query->get_stmt, query->get_sql))
         fail(EX_IOERR, "Failed to prepare statement");
 
-    MYSQL_BIND *p = __mysql_create_binds(2);
+    MYSQL_BIND *p = mysql_util_create_binds(2);
     p[0].buffer_type = MYSQL_TYPE_LONG;
     p[0].buffer = &key1;
     p[1].buffer_type = MYSQL_TYPE_LONG;
     p[1].buffer = &key2;
 
     unsigned long id = 0;
-    MYSQL_BIND *r = __mysql_create_bind(MYSQL_TYPE_LONG, &id);
+    MYSQL_BIND *r = mysql_util_create_bind(MYSQL_TYPE_LONG, &id);
 
-    int ret = __mysql_fetch_result(mysql,query->get_stmt, p, r);
+    int ret = mysql_util_fetch_result(mysql,query->get_stmt, p, r);
     if (ret == -1)
         fail(EX_IOERR, "Failed to execute statement");
 
