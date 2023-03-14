@@ -29,11 +29,12 @@
 
 #endif
 
-#include "char_util.h"
-#include "char_buffer_util.h"
-#include "file_util.h"
+#include "../submodules/cutils/src/char_util.h"
+#include "../submodules/cutils/src/char_buffer_util.h"
+#include "../submodules/cutils/src/file_util.h"
+#include "../submodules/cutils/src/time_util.h"
+
 #include "archive_storage.h"
-#include "time_util.h"
 
 #define MAX_LENGTH_JSON_STRING 4096
 

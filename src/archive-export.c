@@ -22,13 +22,13 @@
 #include <libgen.h>
 #include <sysexits.h>
 
-#include "lib/util.h"
+#include "submodules/cutils/src/util.h"
 
-#include "lib/cli_args.h"
-#include "lib/config_file.h"
+#include "submodules/cutils/src/cli_args.h"
+#include "submodules/cutils/src/config_file.h"
+#include "submodules/cutils/src/command_util.h"
 
 #include "lib/archive_storage.h"
-#include "lib/command_util.h"
 
 
 char *filter_command_dir = "../filter";

@@ -21,10 +21,10 @@
 #include <stdio.h>
 #include <sysexits.h>
 
-#include "lib/util.h"
+#include "submodules/cutils/src/util.h"
 
-#include "lib/cli_args.h"
-#include "lib/config_file.h"
+#include "submodules/cutils/src/cli_args.h"
+#include "submodules/cutils/src/config_file.h"
 
 #include "lib/archive_hash.h"
 #include "lib/archive_storage.h"

@@ -25,8 +25,8 @@
 
 #include <mysql/mysql.h>
 
-#include "util.h"
-#include "char_util.h"
+#include "../submodules/cutils/src/util.h"
+#include "../submodules/cutils/src/char_util.h"
 
 #include "archive_metadata_db.h"
 #include "archive_metadata_json.h"

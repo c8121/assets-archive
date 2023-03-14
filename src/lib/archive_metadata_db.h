@@ -29,7 +29,7 @@
 
 #endif
 
-#include "char_util.h"
+#include "../submodules/cutils/src/char_util.h"
 #include "archive_metadata_json.h"
 
 #define MAX_LENGTH_SUBJECT 1024
