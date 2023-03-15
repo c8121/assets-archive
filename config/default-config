@@ -1,7 +1,9 @@
 # Default configuration
 
-name: value
+[mysql]
 
-[Section]
-
-name: value
+host: localhost
+db: Test
+user: Test
+password: Test
+port: 3306

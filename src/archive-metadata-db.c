@@ -27,18 +27,23 @@
 #include "submodules/cutils/src/util.h"
 
 #include "submodules/cutils/src/cli_args.h"
+#include "submodules/cutils/src/db_util.h"
 #include "submodules/cutils/src/config_file.h"
 
 #include "lib/archive_metadata_json.h"
 #include "lib/archive_metadata_db.h"
 #include "lib/archive_metadata_db_mysql.h"
 
+
+#define DEFAULT_CONFIG_FILE "./config/default-config"
+
+struct db_config db;
+
 /**
  *
  */
 void apply_config(char *section_name, char *name, char *value) {
-    printf("No yet done: Apply section='%s', name='%s', value='%s'\n",
-           section_name, name, value);
+    apply_db_config(&db, "mysql", section_name, name, value);
 }
 
 
@@ -47,7 +52,7 @@ void apply_config(char *section_name, char *name, char *value) {
  */
 void usage_message(int argc, char *argv[]) {
     printf("USAGE:\n");
-    printf("TODO: %s\n", argv[0]);
+    printf("%s <hash>\n", argv[0]);
 }
 
 
@@ -66,20 +71,24 @@ int main(int argc, char *argv[]) {
         return EX_USAGE;
     }
 
-    // Load & apply configuration
-    int i = cli_get_opt_idx("-config", argc, argv);
-    if (i > 0) {
-        if (read_config_file(argv[i], &apply_config) == 0)
-            fail(EX_IOERR, "Failed to read from config file");
-    }
+    char *hash = cli_get_arg(1, argc, argv);
+    if (is_null_or_empty(hash))
+        fail(EX_USAGE, "Hash cannot be empty");
 
     // Check environment
     if (!archive_storage_validate())
         fail(EX_IOERR, "Archive storage not valid");
 
-    char *hash = cli_get_arg(1, argc, argv);
-    if (is_null_or_empty(hash))
-        fail(EX_USAGE, "Hash cannot be empty");
+    // Load & apply configuration
+    memset(&db, 0, sizeof(struct db_config));
+    read_config_file_from_cli_arg("-config", argc, argv, 1, DEFAULT_CONFIG_FILE,
+                                  &apply_config);
+
+    // Connect DB
+    if (!archive_metadata_db_connect(db.host, db.user, db.password, db.db, db.port))
+        return 0;
+    memset(&db, 0, sizeof(struct db_config));
+
 
     cJSON *metadata = archive_metadata_json_open(hash);
     if (metadata == NULL)
@@ -89,15 +98,6 @@ int main(int argc, char *argv[]) {
     if (origins == NULL)
         fail(EX_DATAERR, "Metadata does not contain origins");
 
-    if (!archive_metadata_db_connect(
-            "localhost",
-            "Test",
-            "Test",
-            "Test",
-            3306
-    )) {
-        return 0;
-    }
 
     cJSON *origin;
     cJSON_ArrayForEach(origin, origins) {
