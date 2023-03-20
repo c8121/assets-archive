@@ -418,7 +418,7 @@ char *archive_storage_tmpnam(char *suffix) {
             return NULL;
         }
 
-        if (!file_exists(path_separator) && !dir_exists(path_separator)) {
+        if (!file_exists(path) && !dir_exists(path)) {
             return path;
         }
 
@@ -427,6 +427,42 @@ char *archive_storage_tmpnam(char *suffix) {
 
     fprintf(stderr, "Cannot create temp filename\n");
     return NULL;
+}
+
+/**
+ * @return 1 on success, 0 on fail
+ */
+int archive_storage_write_file(const char *src, FILE *out) {
+
+    if (strstr(src, archive_storage_base_dir) != src) {
+        fprintf(stderr, "Invalid source path (not within %s): %s\n", archive_storage_base_dir, src);
+        return 0;
+    }
+
+    char *tmp = archive_storage_tmpnam(".tmp");
+    if (tmp == NULL)
+        return 0;
+
+    if (!archive_storage_copy_file(src, tmp))
+        return 0;
+
+    FILE *fp = fopen(tmp, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Failed to open temp-file: %s\n", tmp);
+        return 0;
+    }
+
+    int c;
+    while ((c = fgetc(fp)) != EOF) {
+        fputc(c, out);
+    }
+
+    fclose(fp);
+
+    unlink(tmp);
+    free(tmp);
+
+    return 1;
 }
 
 #endif //ASSETS_ARCHIVE_STORAGE
