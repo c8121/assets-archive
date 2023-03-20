@@ -346,7 +346,8 @@ char *archive_storage_find_file(char *hash) {
         if (e->d_name[0] == '\0' || strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0)
             continue;
 
-        cb = char_buffer_append(cb, archive_storage_base_dir, strnlen(archive_storage_base_dir, MAX_LENGTH_STORAGE_BASE_DIR));
+        cb = char_buffer_append(cb, archive_storage_base_dir,
+                                strnlen(archive_storage_base_dir, MAX_LENGTH_STORAGE_BASE_DIR));
         cb = char_buffer_append(cb, path_separator, path_separator_len);
         cb = char_buffer_append(cb, e->d_name, strnlen(e->d_name, MAX_LENGTH_ARCHIVE_FILENAME));
         cb = char_buffer_append(cb, path_separator, path_separator_len);
@@ -375,7 +376,7 @@ char *archive_storage_find_file(char *hash) {
 /**
  * @return 1 on success, 0 on fail
  */
-int archive_storage_get_file(const char *src, const char *dst) {
+int archive_storage_copy_file(const char *src, const char *dst) {
 
     if (strstr(src, archive_storage_base_dir) != src) {
         fprintf(stderr, "Invalid source path (not within %s): %s\n", archive_storage_base_dir, src);
@@ -393,14 +394,15 @@ int archive_storage_get_file(const char *src, const char *dst) {
  * @return temp file name
  * Note: Caller must free result
  */
-char *archive_storage_tmpnam(char *suffix) {
+char *archive_storage_tmpnam(const char *suffix) {
 
     __archive_storage_init();
 
     for (int i = 0; i < 1000; i++) {
 
         struct char_buffer *cb = NULL;
-        cb = char_buffer_append(cb, archive_storage_base_dir, strnlen(archive_storage_base_dir, MAX_LENGTH_STORAGE_BASE_DIR));
+        cb = char_buffer_append(cb, archive_storage_base_dir,
+                                strnlen(archive_storage_base_dir, MAX_LENGTH_STORAGE_BASE_DIR));
         cb = char_buffer_append(cb, path_separator, path_separator_len);
         cb = char_buffer_append(cb, archive_storage_temp_dirname, archive_storage_temp_dirname_len);
         cb = char_buffer_append(cb, path_separator, path_separator_len);
