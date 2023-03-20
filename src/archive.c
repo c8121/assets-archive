@@ -29,12 +29,12 @@
 #include "lib/archive_hash.h"
 #include "lib/archive_storage.h"
 
+#define DEFAULT_CONFIG_FILE "./config/default-config"
+
 /**
  *
  */
 void apply_config(char *section_name, char *name, char *value) {
-    printf("No yet done: Apply section='%s', name='%s', value='%s'\n",
-           section_name, name, value);
 }
 
 
@@ -64,13 +64,11 @@ int main(int argc, char *argv[]) {
     int print_hash_only = cli_has_opt("-s", argc, argv);
 
     // Load & apply configuration
-    int i = cli_get_opt_idx("-config", argc, argv);
-    if (i > 0) {
-        if (read_config_file(argv[i], &apply_config) == 0) {
-            if (print_hash_only)
-                printf("FAIL\n");
-            fail(EX_IOERR, "Failed to read from config file");
-        }
+    if (!read_config_file_from_cli_arg("-config", argc, argv, 0, DEFAULT_CONFIG_FILE,
+                                       &apply_config)) {
+        if (print_hash_only)
+            printf("FAIL\n");
+        fail(EX_IOERR, "Failed to read from config file");
     }
 
     // Check environment

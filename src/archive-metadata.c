@@ -17,6 +17,9 @@
  * Author: christian c8121 de
  */
 
+//to enable strcasestr, strptime, must be before including string.h
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sysexits.h>
@@ -31,6 +34,8 @@
 
 #include "lib/archive_storage.h"
 #include "lib/archive_metadata_json.h"
+
+#define DEFAULT_CONFIG_FILE "./config/default-config"
 
 struct command {
     char *name;
@@ -261,11 +266,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Load & apply configuration
-    int i = cli_get_opt_idx("-config", argc, argv);
-    if (i > 0) {
-        if (read_config_file(argv[i], &apply_config) == 0)
-            fail(EX_IOERR, "Failed to read from config file");
-    }
+    read_config_file_from_cli_arg("-config", argc, argv, 1, DEFAULT_CONFIG_FILE,
+                                  &apply_config);
 
     // Check environment
     if (!archive_storage_validate())
