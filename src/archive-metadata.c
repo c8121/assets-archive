@@ -100,15 +100,6 @@ void *command_get_function(char *s) {
 /**
  *
  */
-void print_metadata(cJSON *metadata) {
-    char *json = cJSON_Print(metadata);
-    printf("META-DATA:\n%s\n\n", json);
-    free(json);
-}
-
-/**
- *
- */
 void command_get(int argi, int argc, char *argv[]) {
 
     if (argc < argi + 1)
@@ -245,7 +236,7 @@ void command_add_origin(int argi, int argc, char *argv[]) {
 
     end:
     if (metadata != NULL) {
-        print_metadata(metadata);
+        archive_metadata_print(metadata);
         archive_metadata_json_close(metadata, hash);
     }
 }

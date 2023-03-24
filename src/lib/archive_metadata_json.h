@@ -427,4 +427,17 @@ cJSON *archive_metadata_json_add_participant(cJSON *participants, const char *na
     return __archive_metadata_json_add_string_to_array(participants, name);
 }
 
+/**
+ *
+ */
+void archive_metadata_print(cJSON *metadata) {
+    if (metadata == NULL) {
+        fprintf(stderr, "Error in archive_metadata_print: metadata is null\n");
+        return;
+    }
+    char *json = cJSON_Print(metadata);
+    printf("META-DATA:\n%s\n\n", json);
+    free(json);
+}
+
 #endif //ASSETS_ARCHIVE_METADATA_JSON
