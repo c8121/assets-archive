@@ -118,7 +118,7 @@ void command_get(int argi, int argc, char *argv[]) {
     if (metadata == NULL)
         fail(EX_DATAERR, "Failed to load/create metadata JSON Object");
 
-    print_metadata(metadata);
+    archive_metadata_print(metadata);
 
     cJSON_Delete(metadata);
 }
