@@ -56,8 +56,6 @@ struct command commands[] = {
  *
  */
 void apply_config(char *section_name, char *name, char *value) {
-    printf("No yet done: Apply section='%s', name='%s', value='%s'\n",
-           section_name, name, value);
 }
 
 
