@@ -8,9 +8,9 @@ BASE=$(realpath "$(dirname "$0")")
 ARCHIVE_FILE_SUFFIX=".archive"
 ARCHIVE_FILE_PATTERN='*'$ARCHIVE_FILE_SUFFIX
 EXPORT_COMMAND="$BASE/bin/archive-export"
-CONVERT_COMMAND="$BASE/src/submodules/ctextutils/filter/convert-to-text.sh"
-TOKENIZE_COMMAND="$BASE/src/submodules/ctextutils/bin/tokenizer"
-INDEX_COMMAND="$BASE/src/submodules/ctextutils/bin/indexer"
+CONVERT_COMMAND="$BASE/filter/convert-to-text.sh"
+TOKENIZE_COMMAND="$BASE/bin/tokenizer"
+INDEX_COMMAND="$BASE/bin/indexer"
 
 archive_base="$1"
 if [ "$archive_base" == "" ]; then
