@@ -1,6 +1,0 @@
-[submodule "src/submodules/cutils"]
-	path = src/submodules/cutils
-	url = https://christian%40c8121.de@github.com/c8121/cutils.git
-[submodule "src/submodules/ctextutils"]
-	path = src/submodules/ctextutils
-	url = https://christian%40c8121.de@github.com/c8121/ctextutils.git

@@ -24,13 +24,13 @@
 #include <stdio.h>
 #include <sysexits.h>
 
-#include "3rd/cjson/cJSON.h"
-#include "3rd/cjson/cJSON.c"
+#include "../dep/cJSON/cJSON.h"
+#include "../dep/cJSON/cJSON.c"
 
-#include "submodules/cutils/src/util.h"
+#include "../dep/cutils/src/util.h"
 
-#include "submodules/cutils/src/cli_args.h"
-#include "submodules/cutils/src/config_file.h"
+#include "../dep/cutils/src/cli_args.h"
+#include "../dep/cutils/src/config_file.h"
 
 #include "lib/archive_storage.h"
 #include "lib/archive_metadata_json.h"

@@ -20,8 +20,8 @@
 #ifndef ASSETS_ARCHIVE_HASH
 #define ASSETS_ARCHIVE_HASH
 
-#include "../submodules/cutils/src/command_util.h"
-#include "../submodules/cutils/src/char_util.h"
+#include "../../dep/cutils/src/command_util.h"
+#include "../../dep/cutils/src/char_util.h"
 
 char *archive_hash_program = "sha256sum -z \"{{file_name}}\"";
 

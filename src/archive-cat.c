@@ -17,16 +17,13 @@
  * Author: christian c8121 de
  */
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <libgen.h>
 #include <sysexits.h>
 
-#include "submodules/cutils/src/util.h"
+#include "../dep/cutils/src/util.h"
 
-#include "submodules/cutils/src/cli_args.h"
-#include "submodules/cutils/src/config_file.h"
-#include "submodules/cutils/src/command_util.h"
+#include "../dep/cutils/src/cli_args.h"
+#include "../dep/cutils/src/config_file.h"
 
 #include "lib/archive_storage.h"
 
