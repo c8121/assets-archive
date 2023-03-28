@@ -24,12 +24,12 @@
 
 #ifndef cJSON__h
 
-#include "../../dep/cJSON/cJSON.h"
-#include "../../dep/cJSON/cJSON.c"
+#include "cJSON/cJSON.h"
+#include "cJSON/cJSON.c"
 
 #endif
 
-#include "../../dep/cutils/src/char_util.h"
+#include "cutils/src/char_util.h"
 #include "archive_metadata_json.h"
 
 #define MAX_LENGTH_SUBJECT 1024

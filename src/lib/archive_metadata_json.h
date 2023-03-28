@@ -24,15 +24,15 @@
 
 #ifndef cJSON__h
 
-#include "../../dep/cJSON/cJSON.h"
-#include "../../dep/cJSON/cJSON.c"
+#include "cJSON/cJSON.h"
+#include "cJSON/cJSON.c"
 
 #endif
 
-#include "../../dep/cutils/src/char_util.h"
-#include "../../dep/cutils/src/char_buffer_util.h"
-#include "../../dep/cutils/src/file_util.h"
-#include "../../dep/cutils/src/time_util.h"
+#include "cutils/src/char_util.h"
+#include "cutils/src/char_buffer_util.h"
+#include "cutils/src/file_util.h"
+#include "cutils/src/time_util.h"
 
 #include "archive_storage.h"
 

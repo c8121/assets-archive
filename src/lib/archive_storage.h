@@ -28,9 +28,9 @@
 #include <dirent.h>
 #include <fcntl.h>
 
-#include "../../dep/cutils/src/char_buffer_util.h"
-#include "../../dep/cutils/src/file_util.h"
-#include "../../dep/cutils/src/command_util.h"
+#include "cutils/src/char_buffer_util.h"
+#include "cutils/src/file_util.h"
+#include "cutils/src/command_util.h"
 
 #define MAX_LENGTH_HASH 254
 #define SPLIT_HASH_AT 2

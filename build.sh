@@ -21,9 +21,11 @@ if [[ ! -d "$binDir" ]] ; then
 	mkdir -p "$binDir"
 fi
 
-cd "$BASE"
-gcc -Wall -o "$binDir/archive" "$sourceDir/archive.c" -lbsd
-gcc -Wall -o "$binDir/archive-metadata" "$sourceDir/archive-metadata.c" -lbsd
-gcc -Wall -o "$binDir/archive-metadata-db" "$sourceDir/archive-metadata-db.c" -lbsd -lmysqlclient
-gcc -Wall -o "$binDir/archive-export" "$sourceDir/archive-export.c" -lbsd
-gcc -Wall -o "$binDir/archive-cat" "$sourceDir/archive-cat.c" -lbsd
+INCLUDE_PATH=$BASE/dep
+
+cd "$BASE" || exit
+gcc -Wall -I"$INCLUDE_PATH" -o "$binDir/archive" "$sourceDir/archive.c" -lbsd
+gcc -Wall -I"$INCLUDE_PATH" -o "$binDir/archive-metadata" "$sourceDir/archive-metadata.c" -lbsd
+gcc -Wall -I"$INCLUDE_PATH" -o "$binDir/archive-metadata-db" "$sourceDir/archive-metadata-db.c" -lbsd -lmysqlclient
+gcc -Wall -I"$INCLUDE_PATH" -o "$binDir/archive-export" "$sourceDir/archive-export.c" -lbsd
+gcc -Wall -I"$INCLUDE_PATH" -o "$binDir/archive-cat" "$sourceDir/archive-cat.c" -lbsd

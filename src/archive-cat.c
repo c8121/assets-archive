@@ -20,10 +20,10 @@
 #include <stdio.h>
 #include <sysexits.h>
 
-#include "../dep/cutils/src/util.h"
+#include "cutils/src/util.h"
 
-#include "../dep/cutils/src/cli_args.h"
-#include "../dep/cutils/src/config_file.h"
+#include "cutils/src/cli_args.h"
+#include "cutils/src/config_file.h"
 
 #include "lib/archive_storage.h"
 
