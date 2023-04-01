@@ -56,8 +56,8 @@ gcc -Wall -I"$dependenciesDir" -o "$binDir/archive-export" "$sourceDir/archive-e
 gcc -Wall -I"$dependenciesDir" -o "$binDir/archive-cat" "$sourceDir/archive-cat.c" -lbsd
 
 gcc -Wall -I"$dependenciesDir" -o "$binDir/tokenizer" "$dependenciesDir/ctextutils/src/tokenizer.c"
-gcc -Wall -I"$dependenciesDir" -o "$binDir/indexer" "$dependenciesDir/ctextutils/src/indexer.c" -lmysqlclient -lm
-gcc -Wall -I"$dependenciesDir" -o "$binDir/mailparser" "$dependenciesDir/ctextutils/src/mailparser.c"
+gcc -Wall -D_GNU_SOURCE -I"$dependenciesDir" -o "$binDir/indexer" "$dependenciesDir/ctextutils/src/indexer.c" -lmysqlclient -lm
+gcc -Wall -D_GNU_SOURCE -I"$dependenciesDir" -o "$binDir/mailparser" "$dependenciesDir/ctextutils/src/mailparser.c"
 
 copy_script "$BASE/dep/ctextutils/filter/convert-to-text.sh" "$BASE/filter/convert-to-text.sh"
 copy_script "$BASE/dep/ctextutils/filter/cat-mime-message.sh" "$BASE/filter/cat-mime-message.sh"
