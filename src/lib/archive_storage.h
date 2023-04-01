@@ -69,6 +69,15 @@ const int archive_storage_temp_dirname_len = 3;
 mode_t archive_file_permissions = S_IRUSR | S_IWUSR; //rw-------
 mode_t archive_dir_permissions = S_IRUSR | S_IWUSR | S_IXUSR; //rwx------
 
+
+/**
+ *
+ */
+void apply_archive_storage_config(const char *config_file_section, char *section_name, char *name, char *value) {
+    if (strcmp(config_file_section, section_name) == 0 && strcmp("dir", name) == 0)
+        archive_storage_base_dir = str_copy(value, strlen(value));
+}
+
 /**
  *
  */

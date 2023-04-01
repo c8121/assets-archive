@@ -37,7 +37,7 @@
 #include "lib/archive_metadata_db_mysql.h"
 
 
-#define DEFAULT_CONFIG_FILE "./config/default-config"
+#define DEFAULT_CONFIG_FILE "../config/default-config"
 
 struct db_config db;
 
@@ -45,6 +45,7 @@ struct db_config db;
  *
  */
 void apply_config(char *section_name, char *name, char *value) {
+    apply_archive_storage_config("archive", section_name, name, value);
     apply_db_config(&db, "mysql", section_name, name, value);
 }
 
@@ -77,14 +78,14 @@ int main(int argc, char *argv[]) {
     if (is_null_or_empty(hash))
         fail(EX_USAGE, "Hash cannot be empty");
 
+    // Load & apply configuration
+    memset(&db, 0, sizeof(struct db_config));
+    char *default_config_file = get_config_file_path(argc, argv, DEFAULT_CONFIG_FILE);
+    read_config_file_from_cli_arg("-config", argc, argv, 1, default_config_file, &apply_config);
+
     // Check environment
     if (!archive_storage_validate())
         fail(EX_IOERR, "Archive storage not valid");
-
-    // Load & apply configuration
-    memset(&db, 0, sizeof(struct db_config));
-    read_config_file_from_cli_arg("-config", argc, argv, 1, DEFAULT_CONFIG_FILE,
-                                  &apply_config);
 
     // Connect DB
     if (!archive_metadata_db_connect(db.host, db.user, db.password, db.db, db.port))
@@ -102,7 +103,8 @@ int main(int argc, char *argv[]) {
 
 
     cJSON *origin;
-    cJSON_ArrayForEach(origin, origins) {
+    cJSON_ArrayForEach(origin, origins)
+    {
         printf("Add meta data for %s\n", hash);
         if (!archive_metadata_db_add(hash, origin)) {
             fail(EX_DATAERR, "Failed to add origin");

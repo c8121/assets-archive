@@ -1,5 +1,9 @@
 # Default configuration
 
+[archive]
+
+dir: /var/spool/archive
+
 [mysql]
 
 host: localhost

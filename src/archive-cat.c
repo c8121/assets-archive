@@ -27,7 +27,7 @@
 
 #include "lib/archive_storage.h"
 
-#define DEFAULT_CONFIG_FILE "./config/default-config"
+#define DEFAULT_CONFIG_FILE "../config/default-config"
 
 
 char *filter_command_dir = "../filter";
@@ -36,6 +36,7 @@ char *filter_command_dir = "../filter";
  *
  */
 void apply_config(char *section_name, char *name, char *value) {
+    apply_archive_storage_config("archive", section_name, name, value);
 }
 
 
@@ -62,8 +63,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Load & apply configuration
-    read_config_file_from_cli_arg("-config", argc, argv, 1, DEFAULT_CONFIG_FILE,
-                                  &apply_config);
+    char *default_config_file = get_config_file_path(argc, argv, DEFAULT_CONFIG_FILE);
+    read_config_file_from_cli_arg("-config", argc, argv, 1, default_config_file, &apply_config);
 
     // Check environment
     if (!archive_storage_validate())
