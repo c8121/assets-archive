@@ -54,6 +54,7 @@ gcc -Wall -I"$dependenciesDir" -o "$binDir/archive-metadata" "$sourceDir/archive
 gcc -Wall -I"$dependenciesDir" -o "$binDir/archive-metadata-db" "$sourceDir/archive-metadata-db.c" -lbsd -lmysqlclient
 gcc -Wall -I"$dependenciesDir" -o "$binDir/archive-export" "$sourceDir/archive-export.c" -lbsd
 gcc -Wall -I"$dependenciesDir" -o "$binDir/archive-cat" "$sourceDir/archive-cat.c" -lbsd
+gcc -Wall -I"$dependenciesDir" -o "$binDir/archive-tempname" "$sourceDir/archive-tempname.c" -lbsd
 
 gcc -Wall -I"$dependenciesDir" -o "$binDir/tokenizer" "$dependenciesDir/ctextutils/src/tokenizer.c"
 gcc -Wall -D_GNU_SOURCE -I"$dependenciesDir" -o "$binDir/indexer" "$dependenciesDir/ctextutils/src/indexer.c" -lmysqlclient -lm
