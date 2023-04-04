@@ -31,6 +31,8 @@
 
 #define DEFAULT_CONFIG_FILE "../config/default-config"
 
+int print_hash_only = 0;
+
 /**
  *
  */
@@ -44,12 +46,27 @@ void apply_config(char *section_name, char *name, char *value) {
  */
 void usage_message(int argc, char *argv[]) {
     printf("USAGE:\n");
+    printf("\n");
+    printf("Add file to archive:\n");
     printf("%s [options] <file>\n", argv[0]);
     printf("\n");
-    printf("Available options:\n");
+    printf("List hashes:\n");
+    printf("%s list\n", argv[0]);
+    printf("\n");
+    printf("General available options:\n");
     printf("    -config: File containing application configuration.\n");
     printf("    -help:   This message.\n");
     printf("    -s:      Print hash only or 'FAIL' on error to stdout.\n");
+}
+
+/**
+ *
+ */
+void list_hash(const char *dir, const char *hash) {
+    if (print_hash_only)
+        printf("%s\n", hash);
+    else
+        printf("%s %s\n", hash, dir);
 }
 
 /**
@@ -62,7 +79,7 @@ int main(int argc, char *argv[]) {
         return EX_OK;
     }
 
-    int print_hash_only = cli_has_opt("-s", argc, argv);
+    print_hash_only = cli_has_opt("-s", argc, argv);
 
     // Load & apply configuration
     char *default_config_file = get_config_file_path(argc, argv, DEFAULT_CONFIG_FILE);
@@ -79,51 +96,56 @@ int main(int argc, char *argv[]) {
         fail(EX_IOERR, "Archive storage not valid");
     }
 
-    // Check if there is at least one file, show usage otherwise
-    if (cli_get_arg(1, argc, argv) == NULL) {
+    // Check if there is at least one file or command, show usage otherwise
+    if (argc < 2) {
         usage_message(argc, argv);
         return EX_USAGE;
     }
 
-    // Add files
-    int f = 1;
-    char *file_name;
-    while ((file_name = cli_get_arg(f++, argc, argv)) != NULL) {
-        if (!file_exists(file_name)) {
-            if (print_hash_only)
-                printf("FAIL\n");
-            fail(EX_IOERR, "File not found");
-        }
-        if (!print_hash_only)
-            printf("Source: %s\n", file_name);
-
-        char *hash = archive_hash(file_name);
-        if (!is_null_or_empty(hash)) {
-            if (!print_hash_only)
-                printf("Hash: %s\n", hash);
-
-            char *existing = archive_storage_find_file(hash);
-            if (existing == NULL) {
-                char *path = archive_storage_get_path(hash);
-                archive_storage_add_file(file_name, path);
-                if (!print_hash_only)
-                    printf("Added file to archive: %s\n", path);
-                else
-                    printf("%s\n", hash);
-            } else {
-                if (!print_hash_only)
-                    printf("File already exists in archive: %s\n", existing);
-                else
-                    printf("%s\n", hash);
-                free(existing);
+    if (is_equal(argv[1], "list")) {
+        //List hashes
+        archive_storage_list_hashes(&list_hash);
+    } else {
+        // Add files
+        int f = 1;
+        char *file_name;
+        while ((file_name = cli_get_arg(f++, argc, argv)) != NULL) {
+            if (!file_exists(file_name)) {
+                if (print_hash_only)
+                    printf("FAIL\n");
+                fail(EX_IOERR, "File not found");
             }
-        } else {
-            if (print_hash_only)
-                printf("FAIL\n");
-            fail(EX_IOERR, "Failed to obtain hash");
-        }
+            if (!print_hash_only)
+                printf("Source: %s\n", file_name);
 
-        if (hash != NULL)
-            free(hash);
+            char *hash = archive_hash(file_name);
+            if (!is_null_or_empty(hash)) {
+                if (!print_hash_only)
+                    printf("Hash: %s\n", hash);
+
+                char *existing = archive_storage_find_file(hash);
+                if (existing == NULL) {
+                    char *path = archive_storage_get_path(hash);
+                    archive_storage_add_file(file_name, path);
+                    if (!print_hash_only)
+                        printf("Added file to archive: %s\n", path);
+                    else
+                        printf("%s\n", hash);
+                } else {
+                    if (!print_hash_only)
+                        printf("File already exists in archive: %s\n", existing);
+                    else
+                        printf("%s\n", hash);
+                    free(existing);
+                }
+            } else {
+                if (print_hash_only)
+                    printf("FAIL\n");
+                fail(EX_IOERR, "Failed to obtain hash");
+            }
+
+            if (hash != NULL)
+                free(hash);
+        }
     }
 }

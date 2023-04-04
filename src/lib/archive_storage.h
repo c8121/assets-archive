@@ -324,6 +324,86 @@ int archive_storage_add_file(const char *src, const char *dst) {
 }
 
 /**
+ *
+ */
+void archive_storage_list_hashes(void (*list_hash_function)(const char *dir, const char *hash)) {
+
+    __archive_storage_init();
+
+    DIR *period_dir = opendir(archive_storage_base_dir);
+    if (period_dir == NULL) {
+        fprintf(stderr, "Failed to open archive base directory: \"%s\"\n", archive_storage_base_dir);
+        return;
+    }
+
+    struct dirent *period_dir_entry;
+    while ((period_dir_entry = readdir(period_dir)) != NULL) {
+
+        if (period_dir_entry->d_name[0] == '\0'
+            || strcmp(period_dir_entry->d_name, ".") == 0
+            || strcmp(period_dir_entry->d_name, "..") == 0)
+            continue;
+
+        if (strcmp(period_dir_entry->d_name, archive_storage_temp_dirname) == 0)
+            continue;
+
+        size_t period_dir_entry_path_len = archive_storage_base_dir_len + strlen(period_dir_entry->d_name) + 2;
+        char period_dir_entry_path[period_dir_entry_path_len];
+        snprintf(period_dir_entry_path, PATH_MAX / 2, "%s/%s", archive_storage_base_dir,
+                 period_dir_entry->d_name);
+
+        DIR *hash_base = opendir(period_dir_entry_path);
+        if (hash_base == NULL) {
+            fprintf(stderr, "Failed to open directory: \"%s\"\n", period_dir_entry_path);
+        } else {
+            struct dirent *hash_base_entry;
+            while ((hash_base_entry = readdir(hash_base)) != NULL) {
+                if (hash_base_entry->d_name[0] == '\0'
+                    || strcmp(hash_base_entry->d_name, ".") == 0
+                    || strcmp(hash_base_entry->d_name, "..") == 0)
+                    continue;
+
+                size_t hash_base_entry_path_len = strlen(period_dir_entry_path) + strlen(hash_base_entry->d_name) + 2;
+                char hash_base_entry_path[hash_base_entry_path_len];
+                snprintf(hash_base_entry_path, hash_base_entry_path_len, "%s/%s", period_dir_entry_path,
+                         hash_base_entry->d_name);
+
+                DIR *files = opendir(hash_base_entry_path);
+                if (files == NULL) {
+                    fprintf(stderr, "Failed to open directory: \"%s\"\n", hash_base_entry_path);
+                } else {
+                    struct dirent *file_entry;
+                    while ((file_entry = readdir(files)) != NULL) {
+                        if (file_entry->d_name[0] == '\0'
+                            || strcmp(file_entry->d_name, ".") == 0
+                            || strcmp(file_entry->d_name, "..") == 0)
+                            continue;
+
+                        if (strstr(file_entry->d_name, archive_storage_file_suffix) == NULL)
+                            continue;
+
+                        char file_entry_path[PATH_MAX];
+                        snprintf(file_entry_path, PATH_MAX, "%s/%s", hash_base_entry_path,
+                                 file_entry->d_name);
+
+                        size_t hash_len = strlen(hash_base_entry->d_name) + strlen(file_entry->d_name) + 1;
+                        char hash[hash_len];
+                        snprintf(hash, hash_len - archive_storage_file_suffix_len, "%s%s", hash_base_entry->d_name, file_entry->d_name);
+
+
+                        (list_hash_function)(file_entry_path, hash);
+                    }
+                }
+                closedir(files);
+            }
+            closedir(hash_base);
+        }
+    }
+
+    closedir(period_dir);
+}
+
+/**
  * Look for a file with given hash, return path.
  *
  * @return Path name if exists, NULL if not exists
