@@ -190,7 +190,7 @@ int archive_storage_validate(int check_readonly) {
 
     if (check_readonly) {
         if (access(archive_storage_base_dir, R_OK) != 0) {
-            fprintf(stderr, "Cannot write to archive base: %s\n", archive_storage_base_dir);
+            fprintf(stderr, "Cannot read from archive base: %s\n", archive_storage_base_dir);
             return 0;
         }
     } else if (access(archive_storage_base_dir, W_OK) != 0) {
