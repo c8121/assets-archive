@@ -10,9 +10,11 @@ METADATA_COMMAND="$BASE/bin/archive-metadata"
 
 source="$1"
 if [ "$source" == "" ]; then
-  echo "Usage: $0 <file or directory>"
+  echo "Usage: $0 <file or directory> [owner]"
   exit
 fi
+
+owner="$2"
 
 ### Functions ###
 
@@ -27,14 +29,18 @@ function add_to_archive() {
   hash=$($ARCHIVE_COMMAND "$file" -s)
   if [ "$hash" != "FAIL" ]; then
 
-    owner=$(stat -c '%U' "$file")
+    file_owner="$owner"
+    if [ "file_owner" == "" ]; then
+      file_owner=$(stat -c '%U' "$file")
+    fi
+
     groups=$(grep "^$(stat -c '%G' "$file"):" /etc/group | awk -F':' '{gsub(","," "); print $4}')
     filetime=$(date -r "$file" "+%Y-%m-%d %H:%M:%S")
     dirname=$(dirname "$file")
     filename=$(basename "$file")
 
     $METADATA_COMMAND "add-origin" "$hash" "$file" \
-      -owner "$owner" -participants $groups \
+      -owner "$file_owner" -participants $groups \
       -category "$dirname" -subject "$filename" \
       -created "$filetime" -changed "$filetime"
   else
