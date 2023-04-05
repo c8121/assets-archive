@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Check environment
-    if (!archive_storage_validate()) {
+    if (!archive_storage_validate(0)) {
         if (print_hash_only)
             printf("FAIL\n");
         fail(EX_IOERR, "Archive storage not valid");

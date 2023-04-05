@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     read_config_file_from_cli_arg("-config", argc, argv, 1, default_config_file, &apply_config);
 
     // Check environment
-    if (!archive_storage_validate())
+    if (!archive_storage_validate(1))
         fail(EX_IOERR, "Archive storage not valid");
 
     char *hash = cli_get_arg(1, argc, argv);

@@ -179,7 +179,7 @@ int __archive_storage_copy_dencode(const char *src, const char *dst, char *denco
  *
  * @return 1 if valid, 0 if not.
  */
-int archive_storage_validate() {
+int archive_storage_validate(int check_readonly) {
 
     __archive_storage_init();
 
@@ -188,7 +188,12 @@ int archive_storage_validate() {
         return 0;
     }
 
-    if (access(archive_storage_base_dir, W_OK) != 0) {
+    if (check_readonly) {
+        if (access(archive_storage_base_dir, R_OK) != 0) {
+            fprintf(stderr, "Cannot write to archive base: %s\n", archive_storage_base_dir);
+            return 0;
+        }
+    } else if (access(archive_storage_base_dir, W_OK) != 0) {
         fprintf(stderr, "Cannot write to archive base: %s\n", archive_storage_base_dir);
         return 0;
     }
@@ -388,7 +393,8 @@ void archive_storage_list_hashes(void (*list_hash_function)(const char *dir, con
 
                         size_t hash_len = strlen(hash_base_entry->d_name) + strlen(file_entry->d_name) + 1;
                         char hash[hash_len];
-                        snprintf(hash, hash_len - archive_storage_file_suffix_len, "%s%s", hash_base_entry->d_name, file_entry->d_name);
+                        snprintf(hash, hash_len - archive_storage_file_suffix_len, "%s%s", hash_base_entry->d_name,
+                                 file_entry->d_name);
 
 
                         (list_hash_function)(file_entry_path, hash);
