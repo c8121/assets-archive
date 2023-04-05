@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
 
         if (!archive_storage_copy_file(path, out_name))
             fail(EX_IOERR, "Failed to copy file");
-
+        printf("%s\n", out_name);
     }
 
 }
