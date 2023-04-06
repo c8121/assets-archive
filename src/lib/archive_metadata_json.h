@@ -91,7 +91,8 @@ cJSON *__archive_metadata_json_add_string_to_array(cJSON *array, const char *s) 
     }
 
     cJSON *existing;
-    cJSON_ArrayForEach(existing, array) {
+    cJSON_ArrayForEach(existing, array)
+    {
         if (cJSON_IsString(existing) && strncmp(existing->valuestring, s, MAX_LENGTH_JSON_STRING) == 0)
             return existing;
     }
@@ -147,11 +148,32 @@ char *archive_metadata_json_get_path(char *hash) {
 
     __archive_metadata_json_init();
 
-    return archive_storage_get_path_with_suffix(
+    //First attempt in current time period container (fast)
+    char *file_name = archive_storage_get_path_with_suffix(
             hash,
             archive_metadata_json_suffix,
             archive_metadata_json_suffix_len
     );
+    if (file_exists(file_name))
+        return file_name;
+
+    //Second search for existing file in all containers
+    char *archive_file_name = archive_storage_find_file(hash);
+    if (archive_file_name != NULL) {
+
+        freenn(file_name);
+
+        size_t len = strlen(archive_file_name);
+        char *json_file_name = malloc(len + archive_metadata_json_suffix_len + 1);
+        snprintf(json_file_name, len, "%s", archive_file_name);
+        snprintf(json_file_name + (len - archive_storage_file_suffix_len), archive_metadata_json_suffix_len + 1, "%s",
+                 archive_metadata_json_suffix);
+        free(archive_file_name);
+
+        file_name = json_file_name;
+    }
+
+    return file_name;
 }
 
 
@@ -281,7 +303,8 @@ cJSON *archive_metadata_json_get_origin(cJSON *metadata_json, const char *name) 
     cJSON *origin;
 
     //Find origin by name
-    cJSON_ArrayForEach(origin, origins) {
+    cJSON_ArrayForEach(origin, origins)
+    {
         cJSON *name_json = cJSON_GetObjectItem(origin, "name");
         if (cJSON_IsString(name_json) && strncmp(name_json->valuestring, name, MAX_LENGTH_ORIGIN_NAME) == 0) {
             return origin;
