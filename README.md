@@ -3,7 +3,7 @@
 Store files into an archive directory
 
     - Deduplicated (same file only once, determined by content-hash)
-    - Organized in subdirectories, one per time period. Old directories will no be touched again to enable partly backups.
+    - Organized in subdirectories, one per time period. Old directories will no be touched again to enable incremental backups.
     - Files can be compressed/encrypted.
 
 ## Install dependencies
@@ -13,6 +13,7 @@ Store files into an archive directory
 
 ## Download & build
 
-    git clone --recursive https://github.com/c8121/assets-archive.git
+    git clone https://github.com/c8121/assets-archive.git
     cd assets-archive
+    ./pull-dependencies.sh
     ./build.sh
