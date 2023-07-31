@@ -42,7 +42,7 @@ elif [ "$(ls -A "$temp_dir")" ]; then
 fi
 
 
-$PARSER_COMMAND "$temp_dir" -ignore image/ <"$file" >&2
+$PARSER_COMMAND "$temp_dir" -ignore image/ <"$file" 2> /dev/null
 find "$temp_dir" -type f -print0 | while IFS= read -r -d '' content_file; do
 
   #ls -l "$content_file"

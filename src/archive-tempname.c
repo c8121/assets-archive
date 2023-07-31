@@ -15,6 +15,8 @@
 
 /*
  * Author: christian c8121 de
+ *
+ * Create name for temporary file (within archive directory)
  */
 
 #include <stdio.h>

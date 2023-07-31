@@ -15,6 +15,9 @@
 
 /*
  * Author: christian c8121 de
+ *
+ * Add file to archive directory.
+ * List contents of archive directory
  */
 
 #include <stdlib.h>

@@ -15,6 +15,10 @@
 
 /*
  * Author: christian c8121 de
+ *
+ * Export archived file.
+ * Find file by its content hash.
+ * Optionally apply filter (convert files).
  */
 
 #include <stdlib.h>

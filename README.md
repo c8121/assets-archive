@@ -2,9 +2,9 @@
 
 Store files into an archive directory
 
-    - Deduplicated (same file only once, determined by content-hash)
-    - Organized in subdirectories, one per time period. Old directories will no be touched again to enable incremental backups.
-    - Files can be compressed/encrypted.
+- Deduplicated (same file only once, determined by content-hash)
+- Organized in subdirectories, one per time period. Old directories will no be touched again to enable incremental backups.
+- Files can be compressed/encrypted.
 
 ## Install dependencies
 

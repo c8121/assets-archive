@@ -15,6 +15,9 @@
 
 /*
  * Author: christian c8121 de
+ *
+ * Write archived file content to stdout.
+ * Find file by its content hash.
  */
 
 #include <stdio.h>

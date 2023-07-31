@@ -15,6 +15,8 @@
 
 /*
  * Author: christian c8121 de
+ *
+ * Write metadata (from JSON-File created by archive-metadata) to DB.
  */
 
 //to enable strcasestr, strptime, must be before including string.h

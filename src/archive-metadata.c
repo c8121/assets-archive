@@ -15,6 +15,8 @@
 
 /*
  * Author: christian c8121 de
+ *
+ * Set ot get metadata of archived file.
  */
 
 //to enable strcasestr, strptime, must be before including string.h
